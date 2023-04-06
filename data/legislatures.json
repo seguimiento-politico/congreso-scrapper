@@ -1,0 +1,77 @@
+[
+  {
+    "legislature": "XIV",
+    "startDate": "2019",
+    "endDate": "Actualidad"
+  },
+  {
+    "legislature": "XIII",
+    "startDate": "2019",
+    "endDate": "2019"
+  },
+  {
+    "legislature": "XII",
+    "startDate": "2016",
+    "endDate": "2019"
+  },
+  {
+    "legislature": "XI",
+    "startDate": "2016",
+    "endDate": "2016"
+  },
+  {
+    "legislature": "X",
+    "startDate": "2011",
+    "endDate": "2016"
+  },
+  {
+    "legislature": "IX",
+    "startDate": "2008",
+    "endDate": "2011"
+  },
+  {
+    "legislature": "VIII",
+    "startDate": "2004",
+    "endDate": "2008"
+  },
+  {
+    "legislature": "VII",
+    "startDate": "2000",
+    "endDate": "2004"
+  },
+  {
+    "legislature": "VI",
+    "startDate": "1996",
+    "endDate": "2000"
+  },
+  {
+    "legislature": "V",
+    "startDate": "1993",
+    "endDate": "1996"
+  },
+  {
+    "legislature": "IV",
+    "startDate": "1989",
+    "endDate": "1993"
+  },
+  {
+    "legislature": "III",
+    "startDate": "1986",
+    "endDate": "1989"
+  },
+  {
+    "legislature": "II",
+    "startDate": "1982",
+    "endDate": "1986"
+  },
+  {
+    "legislature": "I",
+    "startDate": "1979",
+    "endDate": "1982"
+  },
+  {
+    "legislature": "Constituyente",
+    "startDate": "1977",
+    "endDate": "1979"
+  }
+]
