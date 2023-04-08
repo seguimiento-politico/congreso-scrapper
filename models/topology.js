@@ -1,11 +1,15 @@
 const mongoose = require('mongoose');
 
 const topologySchema = new mongoose.Schema({
-  code: String,
-  superType: String,
-  Type: String,
-  subType: String,
-  subSubType: String
+  code: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  supertype: String,
+  type: String,
+  subtype: String,
+  subsubtype: String
 });
 
 let Topology;

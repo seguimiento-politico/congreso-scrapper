@@ -5,6 +5,13 @@ const cheerio = require('cheerio');
 
 const Initiative = require('../models/initiative');
 const Legislature = require('../models/legislature');
+const Topology = require('../models/topology');
+
+//Topology data to be inherited
+let current_supertype = null;
+let current_type = null;
+let current_subtype = null;
+let current_subsubtype = null;
 
 // Define the scrapping URL and method
 const options = {
@@ -16,8 +23,8 @@ const options = {
     }
   };
 
-async function saveDataToDatabase(simplifiedData) {
-  for (const initiativeData of simplifiedData) {
+async function saveInitiativeToDatabase(data) {
+  for (const initiativeData of data) {
     const existingInitiative = await Initiative.findOne({
       initiativeId: initiativeData.initiativeId,
       legislature: initiativeData.legislature,
@@ -26,6 +33,11 @@ async function saveDataToDatabase(simplifiedData) {
     if (existingInitiative) {
       const isChanged = Object.keys(initiativeData).some(key => initiativeData[key] !== existingInitiative[key]);
       if (isChanged) {
+        console.log("----------  Actualizada iniciativa --------------");
+        console.log("iniciativa original:");
+        console.log(existingInitiative);
+        console.log("iniciativa nueva:");
+        console.log(initiativeData);
         await Initiative.findByIdAndUpdate(existingInitiative._id, initiativeData);
       }
     } else {
@@ -34,62 +46,59 @@ async function saveDataToDatabase(simplifiedData) {
   }
 }
 
-async function saveDataToFile(simplifiedData, overwrite = false) {
-    try {
-        await fs.mkdir('data');
-    } catch (err) {
-        if (err.code !== 'EEXIST') throw err;
-    }
+async function saveTopologyToDatabase(data) {
+  for (const topologyData of data) {  
+    const existingTopology = await Topology.findOne({
+      code: topologyData.code
+    });
 
-    try {
-      let existingData = [];
-  
-      if (!overwrite) {
-        try {
-          const content = await fs.readFile('data/initiatives.json', 'utf8');
-          if (content) {
-            existingData = JSON.parse(content);
-          }
-        } catch (err) {
-          if (err.code !== 'ENOENT') throw err;
-        }
-      }
-  
-      const newData = existingData.concat(simplifiedData);
-      const jsonData = JSON.stringify(newData);
-  
-      await fs.writeFile('data/initiatives.json', jsonData, 'utf8');
-    } catch (err) {
-      console.error('Error saving data to file:', err);
+    if (!existingTopology) {
+      // Si la topología no existe, crear una nueva
+      console.log("---------- Topología nueva ----------");
+      console.log(topologyData);
+      await Topology.create(topologyData);
     }
+  }
 }
 
 async function saveData(data, overwrite) {
-    const simplifiedData = data.map(iniciativa => {
-      return {
-        legislature: iniciativa.legislatura,
-        initiativeId: iniciativa.id_iniciativa,
-        topology: iniciativa.id_iniciativa.split('/')[0],
-        superType: current_supertype,
-        type: current_type,
-        subType: current_subtype,
-        title: iniciativa.titulo,
-        startDate: iniciativa.fecha_presentado,
-        endDate: iniciativa.fecha_calificado,
-        author: iniciativa.autor,
-        result: iniciativa.resultado_tram,
-        url: `https://www.congreso.es/es/busqueda-de-iniciativas?p_p_id=iniciativas&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_iniciativas_mode=mostrarDetalle&_iniciativas_legislatura=${iniciativa.legislatura}&_iniciativas_id=${iniciativa.id_iniciativa}`
-      };
-    });
-  
-    saveDataToFile(simplifiedData, overwrite);
-    saveDataToDatabase(simplifiedData);
+  const simplifiedData = data.map(iniciativa => {
+    const newItem = {
+      legislature: iniciativa.legislatura,
+      initiativeId: iniciativa.id_iniciativa,
+      title: iniciativa.titulo,
+      startDate: iniciativa.fecha_presentado,
+      endDate: iniciativa.fecha_calificado,
+      author: iniciativa.autor,
+      result: iniciativa.resultado_tram,
+      url: `https://www.congreso.es/es/busqueda-de-iniciativas?p_p_id=iniciativas&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_iniciativas_mode=mostrarDetalle&_iniciativas_legislatura=${iniciativa.legislatura}&_iniciativas_id=${iniciativa.id_iniciativa}`
+    };    
+
+    return newItem;
+  });
+
+  saveInitiativeToDatabase(simplifiedData);
+
+  const topologyData = data.map(iniciativa => {
+    const newItem = {
+      code: iniciativa.id_iniciativa.split('/')[0],
+      supertype: iniciativa.supertype
+    };
+
+    if (iniciativa.type) newItem.type = iniciativa.type;
+    if (iniciativa.subtype) newItem.subtype = iniciativa.subtype;
+    if (iniciativa.subsubtype) newItem.subsubtype = iniciativa.subsubtype;
+
+    return newItem;
+  });
+
+  saveTopologyToDatabase(topologyData);
 }
 
-async function fetchLegislatures() {
-    try {
-      console.log(`Fetching Legislatures...`);
 
+async function fetchLegislatures() {
+  console.log(`Fetching Legislatures...`);
+    try {
       const response = await axios.get('https://www.congreso.es/es/busqueda-de-iniciativas');
       const $ = cheerio.load(response.data);
       const legislatureOptions = $('#_iniciativas_legislatura option');
@@ -109,8 +118,6 @@ async function fetchLegislatures() {
         }
         
       });
-  
-      await fs.writeFile('data/legislatures.json', JSON.stringify(legislatures, null, 2));
   
       const existingLegislatures = await Legislature.find();
       const existingLegislatureNames = existingLegislatures.map(l => l.legislature);
@@ -135,7 +142,7 @@ async function fetchLegislatures() {
     }
 }
   
-function fetchInitiativesData(page) {
+function fetchInitiatives(page) {
     options.path = `/es/busqueda-de-iniciativas?p_p_id=iniciativas&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=filtrarListado&p_p_cacheability=cacheLevelPage&_iniciativas_legislatura=C&_iniciativas_titulo=&_iniciativas_texto=&_iniciativas_autor=&_iniciativas_competencias=&_iniciativas_tipo=&_iniciativas_tramitacion=&_iniciativas_expedientes=&_iniciativas_hasta=&_iniciativas_tipo_tramitacion=&_iniciativas_comision_competente=&_iniciativas_fase=&_iniciativas_organo=&_iniciativas_fechaDe=0&_iniciativas_fechaDesde=&_iniciativas_fechaHasta=&_iniciativas_materias=&_iniciativas_iniciativas_relacionadas=&_iniciativas_iniciativas_origen=&_iniciativas_iscc=&_iniciativas_paginaActual=${page}`;
     
     return new Promise((resolve, reject) => {
@@ -160,12 +167,59 @@ function fetchInitiativesData(page) {
     });
 }
 
+function setTopology(iniciativa) {
+  if (iniciativa.atis) {
+    current_supertype = iniciativa.atis.toLowerCase();
+    current_type = null;
+    current_subtype = null;
+    current_subsubtype = null;
+
+    if (iniciativa.atip) {
+      current_type = iniciativa.atip.toLowerCase();
+      if (iniciativa.tpai) {
+        current_subtype = iniciativa.tpai.toLowerCase();
+        if(iniciativa.tipo) { 
+          current_subsubtype = iniciativa.tipo.toLowerCase();
+        }
+      } else if (iniciativa.tipo) { 
+        current_subtype = iniciativa.tipo.toLowerCase();
+      }
+    } else if (iniciativa.tipo) { 
+      current_type = iniciativa.tipo.toLowerCase();
+    }
+  } else if (iniciativa.atip) {
+    current_type = iniciativa.atip.toLowerCase();
+    current_subtype = null;
+    current_subsubtype = null;
+    if(iniciativa.tipo) current_subtype = iniciativa.tipo.toLowerCase();
+
+  } else if (iniciativa.tpai) {
+    current_type = iniciativa.tpai.toLowerCase();
+    current_subtype = null;
+    current_subsubtype = null;
+    if(iniciativa.tipo) current_subtype = iniciativa.tipo.toLowerCase();
+
+  } else if(iniciativa.tipo) { 
+    if (current_subtype == null) {
+      current_type = iniciativa.tipo.toLowerCase();
+      current_subsubtype = null;
+    } else if (current_subsubtype == null) {
+      current_subtype = iniciativa.tipo.toLowerCase();
+    } else {
+      current_subsubtype = iniciativa.tipo.toLowerCase();
+    }
+  }
+}
+
 async function fetchALLInitiativesData() {
     let totalResults = 0;
     let fetchedResults = 0;
     let page = 1;
-    let isFirstPage = true;
-  
+    let isFirstPage = false;
+    let totalPages = 0;
+
+    if(page == 1) isFirstPage = true;
+
     // Función de comparación personalizada para ordenar por la clave 'iniciativaXXXX'
     function compareIniciativaKeys(a, b) {
       const keyA = parseInt(a.replace("iniciativa", ""));
@@ -173,71 +227,51 @@ async function fetchALLInitiativesData() {
   
       return keyA - keyB;
     }
-  
+    
+    console.log(`Fetching Initiatives...`);
     try {
-      console.log(`Fetching Initiatives...`);
-
-      const pageData = await fetchInitiativesData(page);
+      const pageData = await fetchInitiatives(page);
       totalResults = pageData.iniciativas_encontradas;
       fetchedResults += pageData.paginacion.docs_fin;
   
       console.log('Results found:' + totalResults);
-      console.log('Total pages:' + Math.ceil(totalResults/25));
+      totalPages = Math.ceil(totalResults/25);
   
       let data = [];
       const sortedKeys = Object.keys(pageData.lista_iniciativas).sort(compareIniciativaKeys);
       for (const key of sortedKeys) {
-        // reset topology data
-        if(pageData.lista_iniciativas[key].atis)
-        {
-          current_supertype = pageData.lista_iniciativas[key].atis;
-          current_type = null;
-          current_subtype = null;
-        } 
-        if(pageData.lista_iniciativas[key].tpai)
-        {
-          current_type = pageData.lista_iniciativas[key].tpai;
-          current_subtype = null;
-        } 
-        if(pageData.lista_iniciativas[key].tipo)
-        {
-          current_subtype = pageData.lista_iniciativas[key].tipo;
-        } 
-  
-        data = data.concat(pageData.lista_iniciativas[key]); //format initiative data
+        const iniciativa = pageData.lista_iniciativas[key];
+        setTopology(iniciativa); // reset topology data
+
+        if (current_supertype) iniciativa.supertype = current_supertype;
+        if (current_type) iniciativa.type = current_type;
+        if (current_subtype) iniciativa.subtype = current_subtype;
+        if (current_subsubtype) iniciativa.subsubtype = current_subsubtype;
+
+        data.push(iniciativa); //format initiative data
       }
   
       await saveData(data, isFirstPage); // Save the data after each page fetch
   
       while (fetchedResults < totalResults) {
-        console.log('Page:' + page);
+        console.log('Page:' + page + "/" + totalPages);
         page++;
+        isFirstPage = false;
         data = []; // Reset the data array
-        const pageData = await fetchInitiativesData(page);
+        const pageData = await fetchInitiatives(page);
         const sortedKeys = Object.keys(pageData.lista_iniciativas).sort(compareIniciativaKeys);
         for (const key of sortedKeys) {
-  
-          // reset topology data
-          if(pageData.lista_iniciativas[key].atis)
-          {
-            current_supertype = pageData.lista_iniciativas[key].atis;
-            current_type = null;
-            current_subtype = null;
-          } 
-          if(pageData.lista_iniciativas[key].tpai)
-          {
-            current_type = pageData.lista_iniciativas[key].tpai;
-            current_subtype = null;
-          } 
-          if(pageData.lista_iniciativas[key].tipo)
-          {
-            current_subtype = pageData.lista_iniciativas[key].tipo;
-          } 
-  
-          data = data.concat(pageData.lista_iniciativas[key]);
+          const iniciativa = pageData.lista_iniciativas[key];
+          setTopology(iniciativa); // reset topology data
+        
+          if (current_supertype) iniciativa.supertype = current_supertype;
+          if (current_type) iniciativa.type = current_type;
+          if (current_subtype) iniciativa.subtype = current_subtype;
+          if (current_subsubtype) iniciativa.subsubtype = current_subsubtype;
+
+          data.push(iniciativa); //format initiative data
         }
         fetchedResults += pageData.paginacion.docs_fin;
-        isFirstPage = false;
         await saveData(data, isFirstPage);
       }
   
@@ -245,10 +279,10 @@ async function fetchALLInitiativesData() {
       console.error(`Fetching Initiatives... [ERROR]`, error);
       console.log(`Last scrapped page: ${page}`);
     }
+    console.log(`Fetching Initiatives... [Done]`);
 }
   
 module.exports = {
-    saveData,
     fetchALLInitiativesData,
     fetchLegislatures
   };

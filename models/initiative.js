@@ -7,6 +7,7 @@ const initiativeSchema = new mongoose.Schema({
   supertype: String,
   type: String,
   subtype: String,
+  subsubtype: String,
   title: String,
   startDate: String,
   endDate: String,

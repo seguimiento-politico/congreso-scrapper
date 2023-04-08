@@ -1,30 +1,28 @@
 # congreso-scrapper
-"Web scrapper" de la página oficial del Congreso de los Diputados de España (http://congreso.es). "
+"Web scrapper" de la página oficial del [Congreso de los Diputados](http://congreso.es) de España.
 
-Se trata de una aplicación escrita en JavaScript y Node.js
+Aunque la web del congreso cuenta con una zona de ["Datos Abiertos"](https://www.congreso.es/es/datos-abiertos) su funcionalidad parece estar enfocada en búsquedas manuales. Además la información que se obtiene por medio de los archivos JSON, XML o CSV no es completa. 
 
-El objetivo de esta aplicación es facilitar a la comunidad poder desarrollar aplicaciones que faciliten el acceso a la información pública relativa a la actividad parlamentaria en España, aportando un acceso eficaz a los datos publicados en http://congreso.es.
+Esta aplicación pretende registrar los datos relativos a la actividad legislativa española (desde la legislatura constituyente hasta la actualidad) de una manera completa y estructurada que facilite su posterior transformación y análisis.
 
-## Instalacion
-Antes de ejecutar app.js asegurate de haber instalado las dependencias correctamente: "npm install"
+Aplicación escrita en JavaScript para Node.js, usando NPM para la gestión de dependencias y MongoDB como base de datos.
 
-## Scrapping
-Por el momento la información que se registra es:
-- Legislaturas 
-- Iniciativas (tarda bastantes horas en registrarlas todas)
+Dada la ingente cantidad de datos, hemos descartado la opción inicialmente implementada de guardar los datos en archivos JSON. Ahora únicamente se registra en una base de datos MongoDB (Si quieres usar otro tipo de BBDD tendrás que modificar el código).
 
-La aplicación guarda la información capturada de dos maneras:
-- Como archivos JSON dentro de la carpeta "data".
-- En una base de datos. Por defecto se usa la base de datos llamada "seguimiento-politico" en MongoDB. Si quieres usar otro tipo de BBDD tendrás que modificar el código.
+## Instalación
+Antes de ejecutar app.js asegurate de haber instalado las dependencias correctamente mediante el comando:  "npm install"
 
-### Tareas pendientes (TO-DO)
-Ampliar la funcionalidad de scrapping para registrar:
-- La topología de las iniciativas (tanto en JSON como en la BBDD). Por ejemplo:
-    {
-        "codigo": "184",
-        "supertipo": "Función de control",
-        "tipo": "Preguntas con respuesta escrita",
-        "subtipo": "Pregunta al Gobierno con respuesta escrita"
-    }
-- Registrar la composición de las legislaturas (diputados/as, grupos parlamentarios)
-- Registrar la información relevante de cada iniciativa (votaciones, intervenciones, publicaciones, etc...)
+
+## Funcionalidad actual
+- [ ] Web scrapping:
+    [x] Legislaturas. 
+    [x] Iniciativas. 
+    [x] Tipología. 
+    [ ] Composición de las legislaturas
+        [ ] diputados/as. 
+        [ ] grupos parlamentarios
+    [ ] Información relevante de cada iniciativa
+        [ ] Votaciones
+        [ ] Intervenciones
+        [ ] Documentos/publicaciones
+- [ ] Desarrollar y publicar una API REST
