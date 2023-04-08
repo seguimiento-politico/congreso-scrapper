@@ -15,14 +15,14 @@ Antes de ejecutar app.js asegurate de haber instalado las dependencias correctam
 
 ## Funcionalidad actual
 - [ ] Web scrapping:
-    [x] Legislaturas. 
-    [x] Iniciativas. 
-    [x] Tipología. 
-    [ ] Composición de las legislaturas
-        [ ] diputados/as. 
-        [ ] grupos parlamentarios
-    [ ] Información relevante de cada iniciativa
-        [ ] Votaciones
-        [ ] Intervenciones
-        [ ] Documentos/publicaciones
+    - [x] Legislaturas. 
+    - [x] Iniciativas. 
+    - [x] Tipología. 
+    - [ ] Composición de las legislaturas
+        - [ ] diputados/as. 
+        - [ ] grupos parlamentarios
+    - [ ] Información relevante de cada iniciativa
+        - [ ] Votaciones
+        - [ ] Intervenciones
+        - [ ] Documentos/publicaciones
 - [ ] Desarrollar y publicar una API REST
