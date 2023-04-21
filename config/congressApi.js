@@ -13,6 +13,7 @@ const paths = {
     representatives: '/es/busqueda-de-diputados?p_p_id=diputadomodule&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=searchDiputados&p_p_cacheability=cacheLevelPage',
     representative: '/es/busqueda-de-diputados?_diputadomodule_mostrarFicha=true',
     representative_initiatives: '/es/iniciativas-diputado?',
+    legislatures: '/es/busqueda-de-iniciativas',
 };
 
 const docs = {

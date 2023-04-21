@@ -57,6 +57,7 @@ async function fetchLegislatures() {
     const $ = cheerio.load(response.data);
 
     const legislatures = [];
+    const legislatureOptions = $('#_iniciativas_legislatura option');
 
     legislatureOptions.each((i, option) => {
       const legislatureText = $(option).text().trim();
@@ -86,41 +87,6 @@ async function fetchLegislatures() {
     console.error('Fetching Legislatures... [ERROR]', error.message);
   }
 };
-
-async function fetchLegislatures() {
-  console.log(`Fetching Legislatures...`);
-    try {
-      const response = await axios.get('https://www.congreso.es/es/busqueda-de-iniciativas');
-      const $ = cheerio.load(response.data);
-      const legislatureOptions = $('#_iniciativas_legislatura option');
-      const legislatures = [];
-  
-      legislatureOptions.each((i, option) => {
-        const legislatureText = $(option).text().trim();
-        let legislature = legislatureText.substring(0, legislatureText.indexOf("(")).trim().split(' ')[0];
-        const datesText = legislatureText.substring(legislatureText.indexOf("(") + 1, legislatureText.indexOf(")")).trim();
-        const dates = datesText.split("-");
-        const startDate = dates[0];
-        const endDate = dates[1];
-        
-        if(legislature !== ""){
-            if(legislature == "Legislatura") legislature = "Constituyente";
-            legislatures.push({ legislature, startDate, endDate });
-        }
-        
-      });
-      
-      const savedLegislature = new Legislature();
-      for (const legislature of legislatures) {
-        await savedLegislature.updateLegislature(legislature);
-      }
-
-      console.log(`Fetching Legislatures... [Done]`);
-
-    } catch (error) {
-      console.error('Fetching Legislatures... [ERROR]', error);
-    }
-}
   
 async function fetchRepresentatives(page) {
   const pageData = await congressApi.fetchRepresentatives(page);
@@ -213,7 +179,7 @@ async function fetchALLInitiativesData() {
       totalResults = pageData.iniciativas_encontradas;
       fetchedResults += pageData.paginacion.docs_fin;
   
-      console.log('Results found:' + totalResults);
+      console.log('Número de iniciativas obtenidas:', parseInt(totalResults));
       totalPages = Math.ceil(totalResults/25);
   
       let data = [];
