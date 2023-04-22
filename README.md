@@ -18,9 +18,9 @@ Antes de ejecutar app.js asegurate de haber instalado las dependencias correctam
     - [x] Legislaturas. 
     - [x] Iniciativas. 
     - [x] Tipología. 
-    - [ ] Composición de las legislaturas
+    - [x] Composición de las legislaturas
         - [x] diputados/as. 
-        - [ ] grupos parlamentarios
+        - [x] grupos parlamentarios y partidos
     - [ ] Información relevante de cada iniciativa
         - [ ] Votaciones
         - [ ] Intervenciones

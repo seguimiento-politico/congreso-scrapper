@@ -1,9 +1,19 @@
 const mongoose = require('mongoose');
 
+const partiesSchema = new mongoose.Schema({
+  name: String,
+});
+
+const parliamentGroupSchema = new mongoose.Schema({
+  name: String,
+  parties: [partiesSchema],
+});
+
 const legislatureSchema = new mongoose.Schema({
   legislature: String,
   startDate: String,
   endDate: String,
+  parliamentGroups: [parliamentGroupSchema]
 });
 
 legislatureSchema.methods.updateLegislature = async function(legislatureData) {
@@ -20,6 +30,31 @@ legislatureSchema.methods.updateLegislature = async function(legislatureData) {
   }
 };
 
+legislatureSchema.methods.updateLegislatureComposition = async function(legislatureName, group, party) {
+  const updatedLegislature = await Legislature.findOne({ legislature: legislatureName });
+  if (updatedLegislature) {
+    let updatedGroup = updatedLegislature.parliamentGroups.find(pg => pg.name === group);
+    if (!updatedGroup) {
+      updatedGroup = {
+        name: group,
+        parties: []
+      };
+      updatedLegislature.parliamentGroups.push(updatedGroup);
+    }
+
+    let updatedParty = updatedGroup.parties.find(p => p.name === party);
+    if (!updatedParty) {
+      updatedParty = {
+        name: party,
+      };
+      updatedGroup.parties.push(updatedParty);
+    }
+
+    await updatedLegislature.save();
+  }
+};
+
+
 let Legislature;
 try {
   Legislature = mongoose.model('Legislature');
@@ -27,4 +62,4 @@ try {
   Legislature = mongoose.model('Legislature', legislatureSchema);
 }
 
-module.exports = Legislature;
+module.exports = Legislature

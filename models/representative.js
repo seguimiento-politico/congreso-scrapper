@@ -1,20 +1,20 @@
 const mongoose = require('mongoose');
 
 const representativeLegislatureSchema = new mongoose.Schema({
-    idLegislatura: Number,
-    idDiputado: Number,
+    legislature: Number,
+    representativeId: Number,
     circunscripcion: String,
-    formacion: String,
-    grupo: String,
-    fecha_alta: String,
-    fecha_baja: String,
+    party: String,
+    parliamentGroup: String,
+    startDate: String,
+    endDate: String,
 });
   
 const representativeSchema = new mongoose.Schema({
-    apellidos: String,
-    nombre: String,
-    genero: String,
-    fecha_nacimiento: String,
+    surnames: String,
+    name: String,
+    gender: String,
+    birthday: String,
     profesion: String, 
     legislatures: [representativeLegislatureSchema],
 });
@@ -22,13 +22,13 @@ const representativeSchema = new mongoose.Schema({
 representativeSchema.methods.saveRepresentative = async function(representativeData, legislatureData) {
     const Representative = this.constructor;
     const existingRepresentative = await Representative.findOne({
-        apellidos: representativeData.apellidos,
-        nombre: representativeData.nombre,
+        surnames: representativeData.surnames,
+        name: representativeData.name,
     });
 
     if (existingRepresentative) {
         const existingLegislature = existingRepresentative.legislatures.find(
-            (leg) => leg.idLegislatura === legislatureData.idLegislatura
+            (leg) => leg.legislature === legislatureData.legislature
         );
 
         if (!existingLegislature) {

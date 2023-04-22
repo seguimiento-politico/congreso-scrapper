@@ -130,35 +130,7 @@ async function getLegislatures() {
   }
 };
 
-// --------------- Useful custom functions ------------------------------------
-function urlInitiative(idLegislature, idInitiative) {
-    return `${urls.base}${paths.initiative}&_iniciativas_legislatura=${idLegislature}&_iniciativas_id=${idInitiative}`;
-}
-
-function urlRepresentativeProfile(idLegislature, idRepresentative){
-    //idLegislature en num romanos
-    return `${urls.base}${paths.representative}&codParlamentario=${idRepresentative}&idLegislatura=${idLegislature}`; 
-}
-
-function urlInitiativesList( page = 1){
-  // other possible filters
-  // &_iniciativas_titulo=&_iniciativas_texto=&_iniciativas_autor=&_iniciativas_competencias=&_iniciativas_tipo=&_iniciativas_tramitacion=&_iniciativas_expedientes=&_iniciativas_hasta=&_iniciativas_tipo_tramitacion=&_iniciativas_comision_competente=&_iniciativas_fase=&_iniciativas_organo=&_iniciativas_fechaDe=0&_iniciativas_fechaDesde=&_iniciativas_fechaHasta=&_iniciativas_materias=&_iniciativas_iniciativas_relacionadas=&_iniciativas_iniciativas_origen=&_iniciativas_iscc=
-    return `${urls.base}${paths.initiatives}&_iniciativas_legislatura=C&_iniciativas_paginaActual=${page}`;
-   }
-
-//muestra la declaración de actividades legislatura actual solo
-function urlDeclaracionActividadesDiputadoActualidad(idDiputado) {
-    return `${urls.base}${docs.representative_interests}${idDiputado}.pdf`;
-}
-
-function iniciativasDiputado(idLegislatura, idDiputado){
-    // idLegislatura en num romanos
-    return `${urls.base}${paths.representative_initiatives}_iniciativas_codigo_diputado=${idDiputado}&_iniciativas_legislatura=${idLegislature}`;
-}
-
 module.exports = {
-    urlInitiative,
-    urlRepresentativeProfile,
     getInitiatives,
     getRepresentatives,
     getLegislatures,

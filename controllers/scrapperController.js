@@ -7,6 +7,7 @@ const Topology = require('../models/topology');
 const Representative = require('../models/representative');
 
 const congressApi = require('../services/congressApi');
+const convertionUtils = require('../services/convertionUtils');
 
 //Topology data to be inherited
 let current_supertype = null;
@@ -123,7 +124,7 @@ function processTopologyInheritance(pageData) {
 async function fetchInitiatives() {
     let totalResults = 0;
     let fetchedResults = 0;
-    let page = 23687;
+    let page = 1;
     let isFirstPage = false;
     let totalPages = 0;
 
@@ -162,6 +163,7 @@ async function fetchInitiatives() {
 }
 
 async function fetchRepresentatives() {
+  console.log(`Representatives [Fetching]`);
   let filters = { 
     _diputadomodule_idLegislatura: '0', 
     _diputadomodule_genero: '0', 
@@ -178,29 +180,32 @@ async function fetchRepresentatives() {
     const representativesData = response.data;
     
     for (const representativeData of representativesData) {
-      console.log(representativeData);
       const rep = {
-        apellidos: representativeData.apellidos,
-        nombre: representativeData.nombre,
-        genero: representativeData.genero == 1 ? 'M' : 'F',
+        surnames: representativeData.apellidos,
+        name: representativeData.nombre,
+        gender: representativeData.genero == 1 ? 'M' : 'F',
         profesion: '',
         legislatures: [],
       };
 
       const legislature = {
-        idLegislatura: representativeData.idLegislatura,
-        idDiputado: representativeData.codParlamentario,
+        legislature: representativeData.idLegislatura,
+        representativeId: representativeData.codParlamentario,
         circunscripcion: representativeData.nombreCircunscripcion,
-        formacion: representativeData.formacion,
-        grupo: representativeData.grupo,
-        fecha_alta: representativeData.fchAlta,
-        fecha_baja: representativeData.fchBaja,
+        party: representativeData.formacion,
+        parliamentGroup: representativeData.grupo,
+        startDate: representativeData.fchAlta,
+        endDate: representativeData.fchBaja,
       };
 
       const newRepresentative = new Representative();
       await newRepresentative.saveRepresentative(rep, legislature);
+      const legislatureName = (i === 0)? 'Constituyente' : convertionUtils.intToRoman(i);
+      const legislatureInstance = new Legislature();
+      await legislatureInstance.updateLegislatureComposition(legislatureName, representativeData.grupo, representativeData.formacion);
     }
   }
+  console.log(`Representatives [Done]`);
 }
 
 async function fetchLegislatures() {
