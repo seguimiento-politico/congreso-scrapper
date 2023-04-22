@@ -26,4 +26,5 @@ module.exports = {
     urls,
     paths,
     docs,
+    TOTAL_LEGISLATURES,
 };
