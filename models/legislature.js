@@ -2,11 +2,13 @@ const mongoose = require('mongoose');
 
 const partiesSchema = new mongoose.Schema({
   name: String,
+  representativeCount: { type: Number, default: 0 }
 });
 
 const parliamentGroupSchema = new mongoose.Schema({
   name: String,
   parties: [partiesSchema],
+  representativeCount: { type: Number, default: 0 }
 });
 
 const legislatureSchema = new mongoose.Schema({
@@ -30,14 +32,15 @@ legislatureSchema.methods.updateLegislature = async function(legislatureData) {
   }
 };
 
-legislatureSchema.methods.updateLegislatureComposition = async function(legislatureName, group, party) {
+legislatureSchema.methods.updateLegislatureComposition = async function(legislatureName, group, party, isNewRepresentative) {
   const updatedLegislature = await Legislature.findOne({ legislature: legislatureName });
   if (updatedLegislature) {
     let updatedGroup = updatedLegislature.parliamentGroups.find(pg => pg.name === group);
     if (!updatedGroup) {
       updatedGroup = {
         name: group,
-        parties: []
+        parties: [],
+        representativeCount: 0,
       };
       updatedLegislature.parliamentGroups.push(updatedGroup);
     }
@@ -46,8 +49,14 @@ legislatureSchema.methods.updateLegislatureComposition = async function(legislat
     if (!updatedParty) {
       updatedParty = {
         name: party,
+        representativeCount: 0,
       };
       updatedGroup.parties.push(updatedParty);
+    }
+  
+    if(isNewRepresentative) {
+      updatedGroup.representativeCount++;
+      updatedParty.representativeCount++;
     }
 
     await updatedLegislature.save();

@@ -199,10 +199,10 @@ async function fetchRepresentatives() {
       };
 
       const newRepresentative = new Representative();
-      await newRepresentative.saveRepresentative(rep, legislature);
+      const isNewRepresentative = await newRepresentative.saveRepresentative(rep, legislature);
       const legislatureName = (i === 0)? 'Constituyente' : convertionUtils.intToRoman(i);
       const legislatureInstance = new Legislature();
-      await legislatureInstance.updateLegislatureComposition(legislatureName, representativeData.grupo, representativeData.formacion);
+      await legislatureInstance.updateLegislatureComposition(legislatureName, representativeData.grupo, representativeData.formacion, isNewRepresentative);
     }
   }
   console.log(`Representatives [Done]`);

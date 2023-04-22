@@ -20,6 +20,7 @@ const representativeSchema = new mongoose.Schema({
 });
 
 representativeSchema.methods.saveRepresentative = async function(representativeData, legislatureData) {
+    let isNew = false;
     const Representative = this.constructor;
     const existingRepresentative = await Representative.findOne({
         surnames: representativeData.surnames,
@@ -34,12 +35,15 @@ representativeSchema.methods.saveRepresentative = async function(representativeD
         if (!existingLegislature) {
             existingRepresentative.legislatures.push(legislatureData);
             await existingRepresentative.save();
+            isNew = true;
         }
     } else {
         const newRepresentative = new Representative(representativeData);
         newRepresentative.legislatures.push(legislatureData);
         await newRepresentative.save();
+        isNew = true;
     }
+    return isNew;
 };
 
 let representative;
