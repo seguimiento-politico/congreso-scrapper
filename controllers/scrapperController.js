@@ -124,7 +124,7 @@ function processTopologyInheritance(pageData) {
 async function fetchInitiatives() {
     let totalResults = 0;
     let fetchedResults = 0;
-    let page = 1;
+    let page = 11167;
     let isFirstPage = false;
     let totalPages = 0;
 
@@ -245,9 +245,9 @@ async function fetchLegislatures() {
     console.error('Legislatures [ERROR]', error.message);
   }
 };
-  
+
 module.exports = {
     fetchInitiatives,
     fetchLegislatures,
-    fetchRepresentatives
+    fetchRepresentatives,
 };
