@@ -16,10 +16,9 @@ let current_subtype = null;
 let current_subsubtype = null;
 
 async function saveData(data, overwrite) {
-  console.log(data);
   const simplifiedData = data.map(iniciativa => {
     const newItem = {
-      term: (iniciativa.legislatura = 'C') ? '0' : convertionUtils.romanToInt(iniciativa.legislatura),
+      term: (iniciativa.legislatura == 'C') ? '0' : convertionUtils.romanToInt(iniciativa.legislatura),
       initiativeId: iniciativa.id_iniciativa,
       initiativeType: iniciativa.id_iniciativa.split('/')[0],
       title: iniciativa.titulo,
@@ -28,7 +27,6 @@ async function saveData(data, overwrite) {
       author: iniciativa.autor,
       result: iniciativa.resultado_tram
     };    
-
     return newItem;
   });
 
@@ -135,7 +133,7 @@ async function fetchInitiatives(filters = {}) {
     if (Object.keys(filters).length === 0) {
       filters.term = 'all';
     }
-    
+
     console.log(`Initiatives [Fetching]`);
     try {
       const pageData = await congressApi.getInitiatives(page, filters);

@@ -6,20 +6,19 @@ const axios = require('axios');
 // Define the scrapping URL and method
 const { urls, paths, docs, TOTAL_TERMS } = require('../config/congressApi');
 
-const request_options = {
-    hostname: urls.base,
-    path: '',
-    method: 'GET',
-    headers: {
-      'Cookie': '__cfduid=dce...d09; JSESSIONID=B8...350; acceptCookie=1;'
-    }
-};
+// Variable global para almacenar las cookies
+let storedCookies = null;
 
 // -------------------    Functions to exploit/utilize the congress API ---------------------------
 async function getCookies() {
+  if (storedCookies) {
+    return storedCookies;
+  }
+
   try {
       const response = await axios.get(urls.https);
       const cookies = response.headers['set-cookie'];
+      storedCookies = cookies;
       return cookies;
   } catch (error) {
       console.error('Error al obtener las cookies:', error);
@@ -41,34 +40,8 @@ function setRequestHeaders(referer, cookies) {
   return headers;
 }
 
-function apiRequest(request_options)
-{
-  return new Promise((resolve, reject) => {
-    https.request(request_options, res => {
-      let responseData = '';
-      res.on('data', chunk => {
-        responseData += chunk;
-      });
-      res.on('end', () => {
-        if (res.statusCode === 200) {
-          const jsonData = JSON.parse(responseData);
-          resolve(jsonData);
-        } else {
-          reject(new Error(`Error: ${res.statusCode} ${res.statusMessage}`));
-        }
-      });
-    })
-    .on('error', error => {
-      reject(error);
-    })
-    .end();
-  });
-}
-
-// by default fetches initiatives from ALL terms
-function getInitiatives(page, filters = {}) { 
-
-  let defaultFilters = { 
+async function getInitiatives(page, filters = {}) {
+  let defaultFilters = {
     term: 'all', // todas las legislaturas 'C'
     title: '',
     text: '',
@@ -91,39 +64,70 @@ function getInitiatives(page, filters = {}) {
   };
 
   // Mezcla los filtros proporcionados con los predeterminados
-  const appliedFilters = { ...defaultFilters, ...filters };  
-  
+  const appliedFilters = { ...defaultFilters, ...filters };
+
   // Form params to send as form data
-  let formParams = { 
-    _iniciativas_legislatura: (appliedFilters.term == 'all') ? 'C' : appliedFilters.term, 
-    _iniciativas_titulo: '', 
-    _iniciativas_texto: '', 
-    _iniciativas_autor: '', 
-    _iniciativas_competencias: '', 
-    _iniciativas_tipo: '', 
-    _iniciativas_tramitacion: '', 
-    _iniciativas_expedientes: '', 
-    _iniciativas_hasta: '', 
-    _iniciativas_tipo_tramitacion: '', 
-    _iniciativas_comision_competente: '', 
-    _iniciativas_fase: '', 
-    _iniciativas_organo: '', 
-    _iniciativas_fechaDe: '0', 
-    _iniciativas_fechaDesde: '', 
-    _iniciativas_fechaHasta: '', 
-    _iniciativas_materias: '', 
-    _iniciativas_iniciativas_relacionadas: '', 
-    _iniciativas_iniciativas_origen: '', 
+  let formParams = {
+    p_p_id: 'iniciativas',
+    p_p_lifecycle: '2',
+    p_p_resource_id: 'filtrarListado',
+    p_p_cacheability: 'cacheLevelPage',
+    _iniciativas_legislatura: (appliedFilters.term == 'all') ? 'C' : appliedFilters.term,
+    _iniciativas_titulo: '',
+    _iniciativas_texto: '',
+    _iniciativas_autor: '',
+    _iniciativas_competencias: '',
+    _iniciativas_tipo: '',
+    _iniciativas_tramitacion: '',
+    _iniciativas_expedientes: '',
+    _iniciativas_hasta: '',
+    _iniciativas_tipo_tramitacion: '',
+    _iniciativas_comision_competente: '',
+    _iniciativas_fase: '',
+    _iniciativas_organo: '',
+    _iniciativas_fechaDe: '0',
+    _iniciativas_fechaDesde: '',
+    _iniciativas_fechaHasta: '',
+    _iniciativas_materias: '',
+    _iniciativas_iniciativas_relacionadas: '',
+    _iniciativas_iniciativas_origen: '',
     _iniciativas_iscc: ''
   };
+  
+  // Construye el objeto URLSearchParams con los parámetros de consulta
+  const queryParams = new URLSearchParams();
+  for (const key in formParams) {
+    queryParams.append(key, formParams[key]);
+  }
+  queryParams.append('_iniciativas_paginaActual', page);
 
-    request_options.path = paths.initiatives;
-    for (const key in formParams){
-        request_options.path += `&${key}=${formParams[key]}`;
+  // Obtiene cookies válidas
+  const cookies = await getCookies();
+  if (!cookies) {
+    console.error('Initiatives [Error]', 'not valid cookies retrieved');
+    return;
+  }
+
+  // Construye los encabezados de la solicitud
+  const headers = setRequestHeaders(`${urls.https}${paths.initiatives}`, cookies);
+
+  // Configura la solicitud de Axios
+  const config = {
+    method: 'get',
+    url: `${urls.https}${paths.initiatives}?${queryParams.toString()}`,
+    headers: headers
+  };
+
+  try {
+    const response = await axios(config);
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      console.log('Initiatives [ERROR]', 'Error en la solicitud');
     }
-    request_options.path += `&_iniciativas_paginaActual=${page}`;
-
-    return apiRequest(request_options);
+  } catch (error) {
+    console.error('Initiatives [ERROR]', error);
+  }
 }
 
 async function getRepresentatives(filters = {}) {
