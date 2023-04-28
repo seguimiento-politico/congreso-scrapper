@@ -13,18 +13,18 @@ const paths = {
     representatives: '/es/busqueda-de-diputados?p_p_id=diputadomodule&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=searchDiputados&p_p_cacheability=cacheLevelPage',
     representative: '/es/busqueda-de-diputados?_diputadomodule_mostrarFicha=true',
     representative_initiatives: '/es/iniciativas-diputado?',
-    legislatures: '/es/busqueda-de-iniciativas',
+    terms: '/es/busqueda-de-iniciativas',
 };
 
 const docs = {
     representative_interests: '/docinte/registro_intereses_diputado_',
 };
 
-const TOTAL_LEGISLATURES = 15;
+const TOTAL_TERMS = 15;
 
 module.exports = {
     urls,
     paths,
     docs,
-    TOTAL_LEGISLATURES,
+    TOTAL_TERMS,
 };

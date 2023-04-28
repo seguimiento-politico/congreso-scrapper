@@ -2,7 +2,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 
 const Initiative = require('../models/initiative');
-const Legislature = require('../models/legislature');
+const Term = require('../models/term');
 const Topology = require('../models/topology');
 const Representative = require('../models/representative');
 
@@ -16,10 +16,12 @@ let current_subtype = null;
 let current_subsubtype = null;
 
 async function saveData(data, overwrite) {
+  console.log(data);
   const simplifiedData = data.map(iniciativa => {
     const newItem = {
-      legislature: iniciativa.legislatura,
+      term: (iniciativa.legislatura = 'C') ? '0' : convertionUtils.romanToInt(iniciativa.legislatura),
       initiativeId: iniciativa.id_iniciativa,
+      initiativeType: iniciativa.id_iniciativa.split('/')[0],
       title: iniciativa.titulo,
       startDate: iniciativa.fecha_presentado,
       endDate: iniciativa.fecha_calificado,
@@ -121,18 +123,22 @@ function processTopologyInheritance(pageData) {
   return data;
 }
 
-async function fetchInitiatives() {
+async function fetchInitiatives(filters = {}) {
     let totalResults = 0;
     let fetchedResults = 0;
-    let page = 11167;
     let isFirstPage = false;
     let totalPages = 0;
+    let page = 1;
 
     if(page == 1) isFirstPage = true;
+
+    if (Object.keys(filters).length === 0) {
+      filters.term = 'all';
+    }
     
     console.log(`Initiatives [Fetching]`);
     try {
-      const pageData = await congressApi.getInitiatives(page);
+      const pageData = await congressApi.getInitiatives(page, filters);
       totalResults = pageData.iniciativas_encontradas;
       fetchedResults += pageData.paginacion.docs_fin;
   
@@ -143,12 +149,12 @@ async function fetchInitiatives() {
   
       await saveData(data, isFirstPage); // Save the data after each page fetch
   
-      while (fetchedResults < totalResults) {
+      while (page <= totalPages) {
         console.log('Initiatives -> Page:' + page + "/" + totalPages);
         page++;
         isFirstPage = false;
 
-        const pageData = await congressApi.getInitiatives(page);
+        const pageData = await congressApi.getInitiatives(page, filters);
         let data = processTopologyInheritance(pageData);
 
         fetchedResults += pageData.paginacion.docs_fin;
@@ -162,20 +168,21 @@ async function fetchInitiatives() {
     console.log(`Initiatives [Done]`);
 }
 
-async function fetchRepresentatives() {
+async function fetchRepresentatives(filters = {}) {
   console.log(`Representatives [Fetching]`);
-  let filters = { 
-    _diputadomodule_idLegislatura: '0', 
-    _diputadomodule_genero: '0', 
-    _diputadomodule_grupo: 'all', 
-    _diputadomodule_tipo: '2', 
-    _diputadomodule_formacion: 'all', 
-    _diputadomodule_filtroProvincias: '[]', 
-    _diputadomodule_nombreCircunscripcion: ''
-  };
+  
+  if (Object.keys(filters).length === 0) {
+    filters.term = 'all';
+  }
 
-  for (let i = 0; i < 15; i++) {
-    filters._diputadomodule_idLegislatura = i.toString(); // Actualiza el valor de idLegislatura
+  const totalTerms = (filters.term == 'all') ? 15 : 1;
+  const startTerm = (totalTerms === 1) ? parseInt(filters.term) : 0;
+
+  for (let i = startTerm; i < startTerm + totalTerms; i++) {
+    if (totalTerms > 1) {
+      filters.term = i.toString(); // Actualiza el valor de idLegislatura
+    }
+
     const response = await congressApi.getRepresentatives(filters);
     const representativesData = response.data;
     
@@ -185,11 +192,11 @@ async function fetchRepresentatives() {
         name: representativeData.nombre,
         gender: representativeData.genero == 1 ? 'M' : 'F',
         profesion: '',
-        legislatures: [],
+        terms: [],
       };
 
-      const legislature = {
-        legislature: representativeData.idLegislatura,
+      const term = {
+        term: representativeData.idLegislatura,
         representativeId: representativeData.codParlamentario,
         circunscripcion: representativeData.nombreCircunscripcion,
         party: representativeData.formacion,
@@ -199,55 +206,61 @@ async function fetchRepresentatives() {
       };
 
       const newRepresentative = new Representative();
-      const isNewRepresentative = await newRepresentative.saveRepresentative(rep, legislature);
-      const legislatureName = (i === 0)? 'Constituyente' : convertionUtils.intToRoman(i);
-      const legislatureInstance = new Legislature();
-      await legislatureInstance.updateLegislatureComposition(legislatureName, representativeData.grupo, representativeData.formacion, isNewRepresentative);
+      const isNewRepresentative = await newRepresentative.saveRepresentative(rep, term);
+      const termName = (i === 0)? 'Constituyente' : convertionUtils.intToRoman(i);
+      const termInstance = new Term();
+      await termInstance.updateTermComposition(termName, representativeData.grupo, representativeData.formacion, isNewRepresentative);
     }
   }
+  
+  
   console.log(`Representatives [Done]`);
 }
 
-async function fetchLegislatures() {
-  console.log(`Legislatures [Fetching]`);
+async function fetchTerms() {
+  console.log(`Terms [Fetching]`);
   try {
-    const response = await congressApi.getLegislatures();
+    const response = await congressApi.getTerms();
     const $ = cheerio.load(response.data);
 
-    const legislatures = [];
-    const legislatureOptions = $('#_iniciativas_legislatura option');
+    const terms = [];
+    const termOptions = $('#_iniciativas_legislatura option');
 
-    legislatureOptions.each((i, option) => {
-      const legislatureText = $(option).text().trim();
-      let legislature = legislatureText.substring(0, legislatureText.indexOf("(")).trim().split(' ')[0];
-      const datesText = legislatureText.substring(legislatureText.indexOf("(") + 1, legislatureText.indexOf(")")).trim();
+    termOptions.each((i, option) => {
+      const termText = $(option).text().trim();
+      let term = termText.substring(0, termText.indexOf("(")).trim().split(' ')[0];
+      const datesText = termText.substring(termText.indexOf("(") + 1, termText.indexOf(")")).trim();
       const dates = datesText.split("-");
       const startDate = dates[0];
       const endDate = dates[1];
       
-      if(legislature !== ""){
-          if(legislature == "Legislatura") legislature = "Constituyente";
-          legislatures.push({ legislature, startDate, endDate });
+      if(term !== ""){
+          if(term == "Legislatura") 
+            term = '0';
+          else 
+            term = convertionUtils.romanToInt(term);
+
+          terms.push({ term, startDate, endDate });
       }
       
     });
 
-    console.log('Legislatures -> total:', legislatures.length);
+    console.log('Terms -> total:', terms.length);
 
-    const newLegislature = new Legislature();
-    for (const legislature of legislatures) {
-      await newLegislature.updateLegislature(legislature);
+    const newTerm = new Term();
+    for (const term of terms) {
+      await newTerm.updateTerm(term);
     }
 
-    console.log(`Legislatures [Done]`);
+    console.log(`Terms [Done]`);
 
   } catch (error) {
-    console.error('Legislatures [ERROR]', error.message);
+    console.error('Terms [ERROR]', error.message);
   }
 };
 
 module.exports = {
     fetchInitiatives,
-    fetchLegislatures,
+    fetchTerms,
     fetchRepresentatives,
 };

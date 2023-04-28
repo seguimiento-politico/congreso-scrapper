@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 
 const initiativeSchema = new mongoose.Schema({
-  legislature: String,
+  term: String,
   initiativeId: String,
+  initiativeType: String,
   title: String,
   startDate: String,
   endDate: String,
@@ -13,7 +14,7 @@ const initiativeSchema = new mongoose.Schema({
 initiativeSchema.methods.saveInitiative = async function(data) {
   const existingInitiative = await Initiative.findOne({
     initiativeId: data.initiativeId,
-    legislature: data.legislature,
+    term: data.term,
   });
 
   if (existingInitiative) {

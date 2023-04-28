@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const axios = require('axios');
 
 // Define the scrapping URL and method
-const { urls, paths, docs, TOTAL_LEGISLATURES } = require('../config/congressApi');
+const { urls, paths, docs, TOTAL_TERMS } = require('../config/congressApi');
 
 const request_options = {
     hostname: urls.base,
@@ -41,42 +41,6 @@ function setRequestHeaders(referer, cookies) {
   return headers;
 }
 
-async function getRepresentatives(filters = { _diputadomodule_idLegislatura: '14', _diputadomodule_genero: '0', _diputadomodule_grupo: 'all', _diputadomodule_tipo: '1', _diputadomodule_nombre: '', _diputadomodule_apellidos: '', _diputadomodule_formacion: 'all', _diputadomodule_filtroProvincias: '[]', _diputadomodule_nombreCircunscripcion: ''}) {
-  // Obtiene cookies válidas
-  const cookies = await getCookies();
-  if (!cookies) {
-      console.error('Representatives [Error]', 'not valid cookies retrieved');
-      return;
-  }
-
-  //construye los encabezados de la solicitud
-  const headers = setRequestHeaders(`${urls.https}${paths.representatives}`, cookies);
-
-  // Construye el objeto formData con los filtros
-  const formData = new URLSearchParams();
-  for (const key in filters) {
-      formData.append(key, filters[key]);
-  }
-  
-  const config = {
-      method: 'post',
-      url: `${urls.https}${paths.representatives}`,
-      headers: headers,
-      data: formData,
-  };
-
-  try {
-      const response = await axios(config);
-      if (response.status === 200) {
-          return response.data;
-      } else {
-          console.log('Representative [ERROR]', 'Error en la solicitud');
-      }
-  } catch (error) {
-      console.error('Representative [ERROR]', error);
-  }
-}
-
 function apiRequest(request_options)
 {
   return new Promise((resolve, reject) => {
@@ -101,28 +65,129 @@ function apiRequest(request_options)
   });
 }
 
-// by default fetches initiatives from ALL legislatures
-function getInitiatives(page, filters = { _iniciativas_legislatura: 'C'}) { 
-    // possible filters:  
-    //_iniciativas_legislatura, _iniciativas_titulo, _iniciativas_texto, _iniciativas_autor, 
-    //_iniciativas_competencias, _iniciativas_tipo, _iniciativas_tramitacion, _iniciativas_expedientes, 
-    //_iniciativas_hasta, _iniciativas_tipo_tramitacion, _iniciativas_comision_competente, 
-    //_iniciativas_fase, _iniciativas_organo, _iniciativas_fechaDe, _iniciativas_fechaDesde, 
-    //_iniciativas_fechaHasta, _iniciativas_materias, _iniciativas_iniciativas_relacionadas, 
-    //_iniciativas_iniciativas_origen, _iniciativas_iscc
-    
+// by default fetches initiatives from ALL terms
+function getInitiatives(page, filters = {}) { 
+
+  let defaultFilters = { 
+    term: 'all', // todas las legislaturas 'C'
+    title: '',
+    text: '',
+    author: '',
+    topology: '',
+    type: '',
+    processing: '',
+    processing_type: '',
+    expedient: '',
+    until: '',
+    comission: '',
+    phase: '',
+    body: '',
+    from: '',
+    to: '',
+    topic: '',
+    related: '',
+    origin: '',
+    iscc: '',
+  };
+
+  // Mezcla los filtros proporcionados con los predeterminados
+  const appliedFilters = { ...defaultFilters, ...filters };  
+  
+  // Form params to send as form data
+  let formParams = { 
+    _iniciativas_legislatura: (appliedFilters.term == 'all') ? 'C' : appliedFilters.term, 
+    _iniciativas_titulo: '', 
+    _iniciativas_texto: '', 
+    _iniciativas_autor: '', 
+    _iniciativas_competencias: '', 
+    _iniciativas_tipo: '', 
+    _iniciativas_tramitacion: '', 
+    _iniciativas_expedientes: '', 
+    _iniciativas_hasta: '', 
+    _iniciativas_tipo_tramitacion: '', 
+    _iniciativas_comision_competente: '', 
+    _iniciativas_fase: '', 
+    _iniciativas_organo: '', 
+    _iniciativas_fechaDe: '0', 
+    _iniciativas_fechaDesde: '', 
+    _iniciativas_fechaHasta: '', 
+    _iniciativas_materias: '', 
+    _iniciativas_iniciativas_relacionadas: '', 
+    _iniciativas_iniciativas_origen: '', 
+    _iniciativas_iscc: ''
+  };
+
     request_options.path = paths.initiatives;
-    for (const key in filters){
-        request_options.path += `&${key}=${filters[key]}`;
+    for (const key in formParams){
+        request_options.path += `&${key}=${formParams[key]}`;
     }
     request_options.path += `&_iniciativas_paginaActual=${page}`;
 
     return apiRequest(request_options);
 }
 
-async function getLegislatures() {
+async function getRepresentatives(filters = {}) {
+  // Obtiene cookies válidas
+  const cookies = await getCookies();
+  if (!cookies) {
+      console.error('Representatives [Error]', 'not valid cookies retrieved');
+      return;
+  }
+  //construye los encabezados de la solicitud
+  const headers = setRequestHeaders(`${urls.https}${paths.representatives}`, cookies);
+
+  let defaultFilters = {
+    term: 'all',
+    gender: 'all', //1 = Male; 0 = Female
+    group: 'all', 
+    type: 'all', // 1 = active; 0 = inactive ???
+    party: 'all',
+    provinces: 'all',
+    circunscripcion: 'all' // for any [name1,name2]
+  };
+
+  // Mezcla los filtros proporcionados con los predeterminados
+  const appliedFilters = { ...defaultFilters, ...filters };
+  
+  // Form params to send as form data
+  let formParams = { 
+    _diputadomodule_idLegislatura: (appliedFilters.term == 'all') ? '-1' : appliedFilters.term,
+    _diputadomodule_genero: (appliedFilters.gender == 'all') ? '0' : (appliedFilters.gender == '1') ? 'M' : 'F', 
+    _diputadomodule_grupo: appliedFilters.group, 
+    _diputadomodule_tipo: (appliedFilters.type == 'all') ? '2' : appliedFilters.type,
+    _diputadomodule_formacion: appliedFilters.party, 
+    _diputadomodule_filtroProvincias: (appliedFilters.provinces == 'all') ? '[]' : appliedFilters.provinces, 
+    _diputadomodule_nombreCircunscripcion: (appliedFilters.circunscripcion == 'all') ? '' : appliedFilters.circunscripcion,
+  };
+
+  // Construye el objeto formData con los filtros
+  const formData = new URLSearchParams();
+  for (const key in formParams) {
+      formData.append(key, formParams[key]);
+  }
+  
+  const config = {
+      method: 'post',
+      url: `${urls.https}${paths.representatives}`,
+      headers: headers,
+      data: formData,
+  };
+
   try {
-    const response = await axios.get(`${urls.https}${paths.legislatures}`);
+      const response = await axios(config);
+      if (response.status === 200) {
+          return response.data;
+      } else {
+          console.log('Representative [ERROR]', 'Error en la solicitud');
+      }
+  } catch (error) {
+      console.error('Representative [ERROR]', error);
+  }
+}
+
+async function getTerms() {
+  try {
+    const response = await axios.get(`${urls.https}${paths.terms}`);
     return response;
   } catch (error) {
     console.error('Error al obtener las legislaturas desde la web del congreso:', error.message);
@@ -133,5 +198,5 @@ async function getLegislatures() {
 module.exports = {
     getInitiatives,
     getRepresentatives,
-    getLegislatures,
+    getTerms,
 };
