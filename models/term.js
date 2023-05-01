@@ -28,7 +28,6 @@ termSchema.methods.updateTerm = async function(termData) {
     }
   } else {
     await Term.create(termData);
-    console.log(`Saved ${termData.term} term to MongoDB`);
   }
 };
 

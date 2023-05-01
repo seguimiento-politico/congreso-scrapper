@@ -1,4 +1,3 @@
-
 const Initiative = require('../models/initiative');
 const Term = require('../models/term');
 const Topology = require('../models/topology');
@@ -78,8 +77,9 @@ async function fetchRepresentatives(filters = {}) {
       await termInstance.updateTermComposition(results.representatives_terms[x].term, results.representatives_terms[x].parliamentGroup, results.representatives_terms[x].party, isNewRepresentative);
     } 
   
-  console.log(`Representatives [Done]`);
+  console.log(`Representatives -> term: ${i} [Done]`);
   }
+  console.log(`Representatives -> total: ${results.representatives.length} [Done]`);
 }
 
 //legislaturas
@@ -87,14 +87,13 @@ async function fetchTerms() {
   console.log(`Terms [Fetching]`);
   try {
     const terms = await congressApi.getTerms(); 
-    console.log('Terms -> total:', terms.length);
 
     const newTerm = new Term();
     for (const term of terms) {
       await newTerm.updateTerm(term);
     }
 
-    console.log(`Terms [Done]`);
+    console.log(`Terms -> total: ${terms.length} [Done]`);
 
   } catch (error) {
     console.error('Terms [ERROR]', error.message);
