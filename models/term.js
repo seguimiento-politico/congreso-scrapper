@@ -64,7 +64,7 @@ termSchema.methods.updateTermComposition = async function(termName, group, party
 };
 
 termSchema.statics.getAllTerms = async function() {
-  return await this.find({}).sort({ term: 1 }).exec();
+  return await this.find({}).exec();
 };
 
 let Term;

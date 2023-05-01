@@ -20,11 +20,8 @@ const docs = {
     representative_interests: '/docinte/registro_intereses_diputado_',
 };
 
-const TOTAL_TERMS = 15;
-
 module.exports = {
     urls,
     paths,
-    docs,
-    TOTAL_TERMS,
+    docs
 };
