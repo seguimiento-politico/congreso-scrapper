@@ -33,6 +33,15 @@ initiativeSchema.methods.saveInitiative = async function(data) {
   }
 };
 
+async function getInitiatives(filters) {
+  try {
+    const initiatives = await this.find(filters);
+    return initiatives;
+  } catch (error) {
+    console.error(`Error retrieving initiatives for filters ${filters}: `, error.message);
+  }
+}
+
 let Initiative;
 try {
   Initiative = mongoose.model('Initiative');

@@ -22,6 +22,7 @@ async function initialBasicScrapping() {
 }
 
 async function initialDetailedScrapping() {
+  await scrapperController.fetchInitiativesContent();
   process.exit(0); // Exit with a success code (0)
 }
 
@@ -34,6 +35,7 @@ async function OneTermBasicScrapping(term) {
 
 async function OneTermDetailedScrapping(term) {
   console.log('Detailed Scrapping for term:', term);
+  await scrapperController.fetchInitiativesContent({ term: term });
   process.exit(0); // Exit with a success code (0)
 }
 
