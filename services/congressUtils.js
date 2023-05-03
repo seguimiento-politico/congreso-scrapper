@@ -5,8 +5,9 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 // Define the scrapping URL and method
-const { urls, paths, docs } = require('../config/congressApi');
+const { urls, paths, docs } = require('../config/congressUtils');
 const convertionUtils = require('./convertionUtils');
+const { url } = require('inspector');
 
 // Variable global para almacenar las cookies
 let storedCookies = null;
@@ -389,8 +390,107 @@ async function getTerms() {
   }
 };
 
+function generateInitiativesURLs(initiatives) {
+  let initiatives_urls = [];
+  for( let i = 0; i < initiatives.length; i++) {
+    const term = convertionUtils.intToRoman(initiatives[i].term);
+    const initiative_url = `${urls.https}${paths.initiative}&_iniciativas_legislatura=${term}&_iniciativas_id=${initiatives[i].initiativeId}`;
+    initiatives_urls.push({term: initiatives[i].term, initiativeId: initiatives[i].initiativeId, url: initiative_url});
+  }
+
+  return initiatives_urls;
+}
+
+async function scrapeInitiative(term, initiativeId, url) {
+  console.log(`legislatura: ${term} - iniciativa: ${initiativeId}`);
+  try {
+    const { data } = await axios.get(url);
+    const $ = cheerio.load(data);
+    const container = $('.container.container-body');
+
+    const presentedAndQualifiedDates = container.find('.f-present').text().trim().split(',').map(date => date.trim());
+    const presentedDate = presentedAndQualifiedDates[0].split(' ')[3];
+    const qualifiedDate = presentedAndQualifiedDates.length > 1 ? presentedAndQualifiedDates[1].split(' ')[3] : null;
+
+    const dossierUrls = container.find('a[href*="dosieres"]').map((_, el) => $(el).attr('href')).get();
+
+    const author = container.find('h3:contains("Autor")').next('ul').find('li').map((_, el) => $(el).text().trim()).get();
+    const result = container.find('.resultadoTramitacion').text().trim() || null;
+    const status = container.find('.situacionActual').text().trim() || null;
+    const type = container.find('.tipoTramitacion').text().trim() || null;
+
+    const competentCommissions = container.find('.comisionesCompetentes a').map((_, el) => {
+      const href = $(el).attr('href');
+      const organoSup = /_organos_selectedOrganoSup=([^&]+)/.exec(href)?.[1] || null;
+      const suborgano = /_organos_selectedSuborgano=([^&]+)/.exec(href)?.[1] || null;
+      return { organoSup, suborgano };
+    }).get();
+
+    const parlamentaryCodes = container.find('.ponentes a').map((_, el) => $(el).attr('href').split('=')[1].split('&')[0]).get();
+
+    const initiativeTramitationHtml = container.find('.iniciativaTramitacion').html();
+    let initiativeTramitation = [];
+
+    if (initiativeTramitationHtml) {
+      initiativeTramitation = initiativeTramitationHtml.trim().split('<br>').map((item) => {
+        const parts = item.trim().split(' ');
+        const startDateIndex = parts.indexOf('desde') + 1;
+        const endDateIndex = parts.indexOf('hasta') + 1;
+        const startDate = startDateIndex > 0 ? parts[startDateIndex] : null;
+        const endDate = endDateIndex > 0 ? parts[endDateIndex] : null;
+        const name = parts.slice(0, startDateIndex - 1).join(' ');
+        return { name, startDate, endDate };
+      });
+    }
+
+    const bulletins = container.find('.boletines li').map((_, el) => {
+      const text = $(el).find('div:first-child').text().trim();
+      const urls = $(el).find('a').map((_, aEl) => $(aEl).attr('href')).get();
+      return { text, urls };
+    }).get();
+
+    const diaries = container.find('.diarios li').map((_, el) => {
+      const text = $(el).find('div:first-child').text().trim();
+      const urlText = $(el).find('div:nth-child(2) a:first-child').attr('href');
+      const urlPDF = $(el).find('div:nth-child(2) a:nth-child(2)').attr('href');
+      return { text, urlText, urlPDF };
+    }).get();
+
+    const boes = container.find('.boes li').map((_, el) => {
+      const text = $(el).find('div:first-child').text().trim();
+      const url = $(el).find('div:nth-child(2) a').attr('href');
+      return { text, url };
+    }).get();
+
+    const initiativeData = {
+      term: term,
+      initiativeId,
+      presentedDate,
+      qualifiedDate,
+      dossierUrls,
+      author,
+      status,
+      result,
+      tramitationType: type,
+      competentCommissions,
+      parlamentaryCodes,
+      initiativeTramitation,
+      bulletins,
+      diaries,
+      boes
+    };
+
+    return initiativeData;
+  } catch (error) {
+    console.error(`Error al extraer información de la iniciativa: ${error.message}`);
+  }
+}
+
+
 module.exports = {
     getInitiatives,
     getRepresentatives,
     getTerms,
+    generateInitiativesURLs,
+    scrapeInitiative,
 };

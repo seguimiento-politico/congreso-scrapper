@@ -51,12 +51,18 @@ async function fetchInitiatives(filters = {}) {
 //contenido de las iniciativas
 async function fetchInitiativesContent(filters = {}) {
   console.log(`Initiatives content [Fetching]`);
-  
+
   try {
     const initiatives = await Initiative.getInitiatives(filters);
-    const initiativeIds = initiatives.map(initiative => initiative.initiativeId);
-    const urls = congressUtils.getInitiativesURLs(initiativeIds);
+    const results = congressUtils.generateInitiativesURLs(initiatives);
     
+    for (const element of results) {
+      let initiativeData = await congressUtils.scrapeInitiative(element.term, element.initiativeId, element.url);
+      //update initiatives
+      const initiative = new Initiative(initiativeData);
+      await initiative.updateInitiative(initiativeData);
+    }
+
   } catch (error) {
     console.error(`Error retrieving initiative IDs for term ${term}: `, error.message);
   }
@@ -92,9 +98,8 @@ async function fetchRepresentatives(filters = {}) {
       await termInstance.updateTermComposition(results.representatives_terms[x].term, results.representatives_terms[x].parliamentGroup, results.representatives_terms[x].party, isNewRepresentative);
     } 
   
-  console.log(`Representatives -> term: ${i} [Done]`);
-  }
-  console.log(`Representatives -> total: ${results.representatives.length} [Done]`);
+  console.log(`Representatives -> term: ${i} - total: ${results.representatives.length} [Done]`);
+  }  
 }
 
 //legislaturas

@@ -2,11 +2,13 @@ const mongoose = require('mongoose');
 
 const partiesSchema = new mongoose.Schema({
   name: String,
+  code: String,
   representativeCount: { type: Number, default: 0 }
 });
 
 const parliamentGroupSchema = new mongoose.Schema({
   name: String,
+  code: String,
   parties: [partiesSchema],
   representativeCount: { type: Number, default: 0 }
 });

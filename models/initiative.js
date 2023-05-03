@@ -5,18 +5,55 @@ const initiativeSchema = new mongoose.Schema({
   initiativeId: String,
   initiativeType: String,
   title: String,
-  startDate: String,
-  endDate: String,
-  author: String,
-  result: String
+  presentedDate: String,
+  qualifiedDate: String,
+  dossierUrls: [String],
+  author: [String],
+  status: String,
+  result: String,
+  tramitationType: String,
+  competentCommissions: [
+    {
+      organoSup: String,
+      suborgano: String
+    }
+  ],
+  parlamentaryCodes: [String],
+  initiativeTramitation: [
+    {
+      name: String,
+      startDate: String,
+      endDate: String
+    }
+  ],
+  bulletins: [
+    {
+      text: String,
+      urls: [String]
+    }
+  ],
+  diaries: [
+    {
+      text: String,
+      urlText: String,
+      urlPDF: String
+    }
+  ],
+  boes: [
+    {
+      text: String,
+      url: String
+    }
+  ]
 });
 
+//crea o actualiza los campos básicos de las iniciativas dadas
 initiativeSchema.methods.saveInitiative = async function(data) {
   const existingInitiative = await Initiative.findOne({
     initiativeId: data.initiativeId,
     term: data.term,
   });
-
+  
   if (existingInitiative) {
     // will only update the initiative in case of endDate or result change; the rest is ignored.
     if (existingInitiative.endDate !== data.endDate || existingInitiative.result !== data.result) {
@@ -33,7 +70,27 @@ initiativeSchema.methods.saveInitiative = async function(data) {
   }
 };
 
-async function getInitiatives(filters) {
+//actualiza el contenido de una iniciativa dada
+initiativeSchema.methods.updateInitiative = async function (data) {
+  try {
+    const updatedFields = Object.entries(data).reduce((acc, [key, value]) => {
+      if (value !== undefined || value !== null) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+
+    await Initiative.findOneAndUpdate(
+      { term: data.term, initiativeId: data.initiativeId },
+      { $set: updatedFields }
+    );
+  } catch (error) {
+    console.error(`Error al actualizar la iniciativa: ${error.message}`);
+  }
+};
+
+
+initiativeSchema.statics.getInitiatives = async function (filters) {
   try {
     const initiatives = await this.find(filters);
     return initiatives;
