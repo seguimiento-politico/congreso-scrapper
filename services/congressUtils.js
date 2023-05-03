@@ -18,6 +18,84 @@ let current_type = null;
 let current_subtype = null;
 let current_subsubtype = null;
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// -------------------    Functions to setup Axios https requests ---------------------------
+
+async function getCookies() {
+  if (storedCookies) {
+    return storedCookies;
+  }
+
+  try {
+      const response = await axios.get(urls.https);
+      const cookies = response.headers['set-cookie'];
+      storedCookies = cookies;
+      return cookies;
+  } catch (error) {
+      console.error('Error al obtener las cookies:', error);
+      return null;
+  }
+}
+
+function setRequestHeaders(referer, cookies) {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0',
+    'Accept': 'application/json, text/javascript, */*; q=0.01',
+    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+    'X-Requested-With': 'XMLHttpRequest',
+    'Origin': urls.https,
+    'DNT': '1',
+    'Referer': referer,
+    'Cookie': cookies,
+  };
+  return headers;
+}
+
+async function setRequest(method, request_url, params) {
+  // Obtiene cookies válidas
+  const cookies = await getCookies();
+  if (!cookies) {
+    console.error('Initiatives [Error]', 'not valid cookies retrieved');
+    return false;
+  }
+
+  // Construye los encabezados de la solicitud
+  const headers = setRequestHeaders(request_url, cookies);
+
+  // Construye el objeto URLSearchParams con los parámetros de consulta
+  const queryParams = new URLSearchParams();
+  for (const key in params) {
+    queryParams.append(key, params[key]);
+  }
+
+  if(method.toUpperCase() == 'GET' ) {
+    //set axios config
+    const config = {
+      method: 'GET',
+      url: request_url + '?' + queryParams.toString(),
+      headers: headers
+    };
+    
+    return config;
+  }else if(method.toUpperCase() == 'POST') {
+    // Construye el objeto formData con los filtros
+    const formData = new URLSearchParams();
+    for (const key in params) {
+        formData.append(key, params[key]);
+    }
+
+    //set axios config
+    const config = {
+      method: 'post',
+      url: request_url,
+      headers: headers,
+      data: formData,
+    };
+    return config;
+  }
+
+  return false;
+}
 
 ////////////////////////////////////////////////////////////////////
 // ----------- Functions to transform datasets ---------------------
@@ -163,37 +241,8 @@ function transformTermData(data) {
 
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////
 // -------------------    Functions to exploit/utilize the congress API ---------------------------
-async function getCookies() {
-  if (storedCookies) {
-    return storedCookies;
-  }
-
-  try {
-      const response = await axios.get(urls.https);
-      const cookies = response.headers['set-cookie'];
-      storedCookies = cookies;
-      return cookies;
-  } catch (error) {
-      console.error('Error al obtener las cookies:', error);
-      return null;
-  }
-}
-
-function setRequestHeaders(referer, cookies) {
-  const headers = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/112.0',
-    'Accept': 'application/json, text/javascript, */*; q=0.01',
-    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    'X-Requested-With': 'XMLHttpRequest',
-    'Origin': urls.https,
-    'DNT': '1',
-    'Referer': referer,
-    'Cookie': cookies,
-  };
-  return headers;
-}
 
 //iniciativas
 async function getInitiatives(page, filters = {}) {
@@ -249,30 +298,9 @@ async function getInitiatives(page, filters = {}) {
     _iniciativas_iniciativas_origen: '',
     _iniciativas_iscc: ''
   };
-  
-  // Construye el objeto URLSearchParams con los parámetros de consulta
-  const queryParams = new URLSearchParams();
-  for (const key in formParams) {
-    queryParams.append(key, formParams[key]);
-  }
-  queryParams.append('_iniciativas_paginaActual', page);
 
-  // Obtiene cookies válidas
-  const cookies = await getCookies();
-  if (!cookies) {
-    console.error('Initiatives [Error]', 'not valid cookies retrieved');
-    return;
-  }
-
-  // Construye los encabezados de la solicitud
-  const headers = setRequestHeaders(`${urls.https}${paths.initiatives}`, cookies);
-
-  // Configura la solicitud de Axios
-  const config = {
-    method: 'get',
-    url: `${urls.https}${paths.initiatives}?${queryParams.toString()}`,
-    headers: headers
-  };
+  const request_url = `${urls.https}${paths.initiatives}`;
+  const config = await setRequest('GET', request_url, formParams);
 
   try {
     const response = await axios(config);
@@ -294,15 +322,6 @@ async function getInitiatives(page, filters = {}) {
 
 //diputados
 async function getRepresentatives(filters = {}) {
-  // Obtiene cookies válidas
-  const cookies = await getCookies();
-  if (!cookies) {
-      console.error('Representatives [Error]', 'not valid cookies retrieved');
-      return;
-  }
-  //construye los encabezados de la solicitud
-  const headers = setRequestHeaders(`${urls.https}${paths.representatives}`, cookies);
-
   let defaultFilters = {
     term: 'all',
     gender: 'all', //1 = Male; 0 = Female
@@ -327,18 +346,8 @@ async function getRepresentatives(filters = {}) {
     _diputadomodule_nombreCircunscripcion: (appliedFilters.circunscripcion == 'all') ? '' : appliedFilters.circunscripcion,
   };
 
-  // Construye el objeto formData con los filtros
-  const formData = new URLSearchParams();
-  for (const key in formParams) {
-      formData.append(key, formParams[key]);
-  }
-  
-  const config = {
-      method: 'post',
-      url: `${urls.https}${paths.representatives}`,
-      headers: headers,
-      data: formData,
-  };
+  let request_url = `${urls.https}${paths.representatives}`;
+  const config = await setRequest('POST', request_url, formParams);
 
   try {
       const response = await axios(config);
@@ -351,6 +360,25 @@ async function getRepresentatives(filters = {}) {
   } catch (error) {
       console.error('Representative [ERROR]', error);
   }
+}
+
+//composición grupos parlamentarios 
+async function getParliamentGroups(filters = {}) {  
+  let defaultFilters = {
+    term: '0',
+  };
+
+  // Mezcla los filtros proporcionados con los predeterminados
+  const appliedFilters = { ...defaultFilters, ...filters };
+
+   // Form params to send as form data
+  let formParams = { 
+    _grupos_idLegislatura: (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term),
+  };
+
+  let request_url = `${urls.https}${paths.groups}`;
+  const config = await setRequest('POST', request_url, formParams);
+
 }
 
 //legislaturas
@@ -491,6 +519,7 @@ module.exports = {
     getInitiatives,
     getRepresentatives,
     getTerms,
+    getParliamentGroups,
     generateInitiativesURLs,
     scrapeInitiative,
 };
