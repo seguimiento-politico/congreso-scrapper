@@ -89,7 +89,6 @@ async function fetchRepresentatives(filters = {}) {
     }
 
     const results = await congressUtils.getRepresentatives(filters);
-    
     // loop every representative
     for (let x = 0; x < results.representatives.length; x++) {
       const newRepresentative = new Representative();
@@ -120,9 +119,38 @@ async function fetchTerms() {
   }
 };
 
+// grupos parlamentarios
+async function fetchParliamentGroups(filters = {}) {
+  if (Object.keys(filters).length === 0) {
+    filters.term = 'all';
+  }
+  console.log(`Parliament Groups [Fetching]`);
+  
+  const allTerms = await Term.getAllTerms();
+  const totalTerms = (filters.term == 'all') ? allTerms.length : 1;
+  const startTerm = (totalTerms === 1) ? parseInt(filters.term) : 0;
+
+  //loop every term
+  for (let i = startTerm; i < startTerm + totalTerms; i++) {
+    if (totalTerms > 1) {
+      filters.term = i.toString(); // Actualiza el valor de Legislatura
+    }
+
+    const results = await congressUtils.getParliamentGroups(filters);
+
+    // loop every group
+    for (let x = 0; x < results.length; x++) {
+      const termInstance = new Term();
+      await termInstance.updateTermParliamentGroup(filters.term, results[x]);
+    }
+    console.log(`Parliament Groups -> term: ${i} - total: ${results.length} [Done]`);
+  } 
+
+}
 module.exports = {
     fetchInitiatives,
     fetchTerms,
     fetchRepresentatives,
+    fetchParliamentGroups,
     fetchInitiativesContent
 };

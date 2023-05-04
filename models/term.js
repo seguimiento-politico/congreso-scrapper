@@ -8,7 +8,8 @@ const partiesSchema = new mongoose.Schema({
 
 const parliamentGroupSchema = new mongoose.Schema({
   name: String,
-  code: String,
+  groupId: String,
+  seats: String,
   parties: [partiesSchema],
   representativeCount: { type: Number, default: 0 }
 });
@@ -32,6 +33,29 @@ termSchema.methods.updateTerm = async function(termData) {
     await Term.create(termData);
   }
 };
+
+termSchema.methods.updateTermParliamentGroup = async function (term, groupData) {
+  const existingTerm = await Term.findOne({ term: term });
+
+  if (existingTerm) {
+    // Busca y actualiza el grupo parlamentario en el término existente
+    const updated = await Term.findOneAndUpdate(
+      { term: term, "parliamentGroups.code": groupData.groupId },
+      { $set: { "parliamentGroups.$": groupData } },
+      { new: true }
+    );
+
+    if (!updated) {
+      // Si no se encuentra el grupo parlamentario, agrégalo
+      existingTerm.parliamentGroups.push(groupData);
+      await existingTerm.save();
+    }
+  } else {
+    console.log(`Unable. Term ${term} not found.`);
+  }
+};
+
+
 
 termSchema.methods.updateTermComposition = async function(termName, group, party, isNewRepresentative) {
   const updatedTerm = await Term.findOne({ term: termName });

@@ -12,6 +12,7 @@ const rl = readline.createInterface({
 async function initialBasicScrapping() {
   try {
     await scrapperController.fetchTerms();
+    await scrapperController.fetchParliamentGroups();
     await scrapperController.fetchRepresentatives();
     await scrapperController.fetchInitiatives(); //fetches initiatives and topology at the same time
   } catch (error) {
@@ -28,6 +29,8 @@ async function initialDetailedScrapping() {
 
 async function OneTermBasicScrapping(term) {
   console.log('Basic Scrapping for term:', term);
+  await scrapperController.fetchTerms();
+  await scrapperController.fetchParliamentGroups({ term: term });
   await scrapperController.fetchRepresentatives({ term: term });
   await scrapperController.fetchInitiatives({ term: term }); //fetches initiatives and topology at the same time
   process.exit(0); // Exit with a success code (0)

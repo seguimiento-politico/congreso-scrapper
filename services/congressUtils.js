@@ -101,7 +101,6 @@ async function setRequest(method, request_url, params) {
 // ----------- Functions to transform datasets ---------------------
 
 function transformRepresentativesData(data) {
-
   let representatives = [];
   let representatives_terms = [];
 
@@ -147,6 +146,20 @@ function transformInitiativeData(data) {
     };    
     return newItem;
   });
+  return simplifiedData;
+}
+
+function transformPairlamentGroupData(data){
+  const groupsArray = Object.values(data);
+
+  const simplifiedData = groupsArray.map(group => {
+    const newItem = {
+      name: group.grpDesc,
+      groupId: group.codOrg
+    };    
+    return newItem;
+  });
+
   return simplifiedData;
 }
 
@@ -379,6 +392,17 @@ async function getParliamentGroups(filters = {}) {
   let request_url = `${urls.https}${paths.groups}`;
   const config = await setRequest('POST', request_url, formParams);
 
+  try {
+    const response = await axios(config);
+    if (response.status === 200) {
+      let results = transformPairlamentGroupData(response.data.data);
+      return results;
+    } else {
+        console.error('Parliament Groups [ERROR]', 'Error en la solicitud');
+    }
+  } catch (error) {
+      console.error('Parliament Groups [ERROR]', error);
+  }
 }
 
 //legislaturas
