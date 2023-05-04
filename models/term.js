@@ -1,5 +1,17 @@
 const mongoose = require('mongoose');
 
+const subcomissionSchema = new mongoose.Schema({
+  name: String,
+  code: String,
+});
+
+const comissionSchema = new mongoose.Schema({
+  name: String,
+  code: String,
+  type: String,
+  subcomissionSchema: [subcomissionSchema]
+});
+
 const partiesSchema = new mongoose.Schema({
   name: String,
   code: String,
@@ -8,7 +20,7 @@ const partiesSchema = new mongoose.Schema({
 
 const parliamentGroupSchema = new mongoose.Schema({
   name: String,
-  groupId: String,
+  code: String,
   seats: String,
   parties: [partiesSchema],
   representativeCount: { type: Number, default: 0 }
@@ -18,7 +30,8 @@ const termSchema = new mongoose.Schema({
   term: String,
   startDate: String,
   endDate: String,
-  parliamentGroups: [parliamentGroupSchema]
+  parliamentGroups: [parliamentGroupSchema],
+  comissions: [comissionSchema]
 });
 
 termSchema.methods.updateTerm = async function(termData) {
@@ -38,23 +51,29 @@ termSchema.methods.updateTermParliamentGroup = async function (term, groupData) 
   const existingTerm = await Term.findOne({ term: term });
 
   if (existingTerm) {
-    // Busca y actualiza el grupo parlamentario en el término existente
+    // Busca y actualiza el grupo parlamentario en la legislatura existente
     const updated = await Term.findOneAndUpdate(
-      { term: term, "parliamentGroups.code": groupData.groupId },
+      { term: term, "parliamentGroups.code": groupData.code },
       { $set: { "parliamentGroups.$": groupData } },
       { new: true }
     );
-
+    
     if (!updated) {
-      // Si no se encuentra el grupo parlamentario, agrégalo
-      existingTerm.parliamentGroups.push(groupData);
-      await existingTerm.save();
+      // Comprueba si el grupo parlamentario ya existe en la legislatura
+      const groupExists = existingTerm.parliamentGroups.some(
+        (group) => group.code === groupData.code
+      );
+
+      // Si no se encuentra el grupo parlamentario y no existe en la legislatura, agrégalo
+      if (!groupExists) {
+        existingTerm.parliamentGroups.push(groupData);
+        await existingTerm.save();
+      }
     }
   } else {
     console.log(`Unable. Term ${term} not found.`);
   }
 };
-
 
 
 termSchema.methods.updateTermComposition = async function(termName, group, party, isNewRepresentative) {
@@ -87,6 +106,35 @@ termSchema.methods.updateTermComposition = async function(termName, group, party
     await updatedTerm.save();
   }
 };
+
+termSchema.methods.updateTermCommission = async function (term, commissionData) {
+  const existingTerm = await Term.findOne({ term: term });
+
+  if (existingTerm) {
+    // Busca y actualiza la comisión en la legislatura existente
+    const updated = await Term.findOneAndUpdate(
+      { term: term, "comissions.code": commissionData.code },
+      { $set: { "comissions.$": commissionData } },
+      { new: true }
+    );
+
+    if (!updated) {
+      // Comprueba si la comisión ya existe en la legislatura
+      const commissionExists = existingTerm.comissions.some(
+        (commission) => commission.code === commissionData.code
+      );
+
+      // Si no se encuentra la comisión y no existe en la legislatura, agrégala
+      if (!commissionExists) {
+        existingTerm.comissions.push(commissionData);
+        await existingTerm.save();
+      }
+    }
+  } else {
+    console.log(`Unable. Term ${term} not found.`);
+  }
+};
+
 
 termSchema.statics.getAllTerms = async function() {
   return await this.find({}).exec();

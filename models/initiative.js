@@ -14,8 +14,9 @@ const initiativeSchema = new mongoose.Schema({
   tramitationType: String,
   competentCommissions: [
     {
-      organoSup: String,
-      suborgano: String
+      name: String,
+      code: String,
+      subBodyId: String
     }
   ],
   parlamentaryCodes: [String],

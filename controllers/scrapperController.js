@@ -70,6 +70,52 @@ async function fetchInitiativesContent(filters = {}) {
   console.log(`Initiatives [Done]`);
 }
 
+async function fetchComissions(filters = {}) {
+  console.log(`Comissions [Fetching]`);
+
+  if (Object.keys(filters).length === 0) {
+    filters.term = 'all';
+  }
+  
+  const allTerms = await Term.getAllTerms();
+  const totalTerms = (filters.term == 'all') ? allTerms.length : 1;
+  const startTerm = (totalTerms === 1) ? parseInt(filters.term) : 0;
+ 
+  //loop every term
+  for (let i = startTerm; i < startTerm + totalTerms; i++) {
+    if (totalTerms > 1) {
+      filters.term = i.toString(); // Actualiza el valor de idLegislatura
+    }
+
+    const results = await congressUtils.scrapeComissions(filters);
+
+    // loop every commission
+    for (let x = 0; x < results.length; x++) {
+      const commissionData = results[x];
+
+      // Update commission in the database
+      const existingTerm = await Term.findOne({ term: filters.term });
+
+      if (existingTerm) {
+        const commissionExists = existingTerm.comissions.some(
+          (commission) => commission.code === commissionData.code
+        );
+
+        if (!commissionExists) {
+          existingTerm.comissions.push(commissionData);
+          await existingTerm.save();
+        }
+      } else {
+        console.log(`Unable. Term ${filters.term} not found.`);
+      }
+    }
+
+    console.log(`Comissions -> term: ${i} - total: ${results.length} [Done]`);
+  }
+}
+
+
+
 //diputados
 async function fetchRepresentatives(filters = {}) {
   console.log(`Representatives [Fetching]`);
@@ -152,5 +198,6 @@ module.exports = {
     fetchTerms,
     fetchRepresentatives,
     fetchParliamentGroups,
-    fetchInitiativesContent
+    fetchInitiativesContent,
+    fetchComissions
 };

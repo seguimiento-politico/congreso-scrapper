@@ -155,7 +155,7 @@ function transformPairlamentGroupData(data){
   const simplifiedData = groupsArray.map(group => {
     const newItem = {
       name: group.grpDesc,
-      groupId: group.codOrg
+      code: group.codOrg
     };    
     return newItem;
   });
@@ -375,6 +375,55 @@ async function getRepresentatives(filters = {}) {
   }
 }
 
+// comisiones
+async function scrapeComissions(filters = {}) {
+  let defaultFilters = {
+    term: '0',
+  };
+
+  // Mezcla los filtros proporcionados con los predeterminados
+  const appliedFilters = { ...defaultFilters, ...filters };
+
+  // Form params to send as form data
+  let formParams = { 
+    _organos_selectedLegislatura: (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term),
+  };
+
+  let request_url = `${urls.https}${paths.comissions}`;
+  const config = await setRequest('GET', request_url, formParams);
+  
+  try {
+    const response = await axios(config);
+    if (response.status === 200) {
+      const $ = cheerio.load(response.data);
+      const results = [];
+      let currentType = '';
+
+      const portletOrganos = $('#portlet_organos');
+
+      portletOrganos.find('h2, h3, div > a').each((_, element) => {
+        const tagName = $(element).prop('tagName');
+
+        if (tagName === 'H3') {
+          currentType = $(element).text().trim();
+        } else if (tagName === 'A' && $(element).hasClass('isComision')) {
+          const href = $(element).attr('href');
+          const name = $(element).text().trim();
+          const code = /_organos_codComision=([^&]+)/.exec(href)?.[1] || null;
+          results.push({ code, name, type: currentType });
+        }
+      });
+
+      return results;
+    } else {
+        console.error('Comissions [ERROR]', 'Error en la solicitud');
+    }
+  } catch (error) {
+      console.error('Comissions [ERROR]', error);
+  }
+
+}
+
 //composición grupos parlamentarios 
 async function getParliamentGroups(filters = {}) {  
   let defaultFilters = {
@@ -458,7 +507,7 @@ async function scrapeInitiative(term, initiativeId, url) {
   try {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
-    const container = $('.container.container-body');
+    const container = $('.titular-seccion');
 
     const presentedAndQualifiedDates = container.find('.f-present').text().trim().split(',').map(date => date.trim());
     const presentedDate = presentedAndQualifiedDates[0].split(' ')[3];
@@ -471,11 +520,20 @@ async function scrapeInitiative(term, initiativeId, url) {
     const status = container.find('.situacionActual').text().trim() || null;
     const type = container.find('.tipoTramitacion').text().trim() || null;
 
-    const competentCommissions = container.find('.comisionesCompetentes a').map((_, el) => {
-      const href = $(el).attr('href');
-      const organoSup = /_organos_selectedOrganoSup=([^&]+)/.exec(href)?.[1] || null;
-      const suborgano = /_organos_selectedSuborgano=([^&]+)/.exec(href)?.[1] || null;
-      return { organoSup, suborgano };
+    const competentCommissions = container.find('.comisionesCompetentes li').map((_, el) => {
+      const links = $(el).find('a');
+      const texts = [];
+      const body = [];
+      const subBody = [];
+    
+      links.each((_, link) => {
+        const href = $(link).attr('href');
+        body.push(/_organos_selectedOrganoSup=([^&]+)/.exec(href)?.[1] || null);
+        subBody.push(/_organos_selectedSuborgano=([^&]+)/.exec(href)?.[1] || null);
+        texts.push($(link).text().trim());
+      });
+    
+      return { body, subBody, name: texts.join(', ') };
     }).get();
 
     const parlamentaryCodes = container.find('.ponentes a').map((_, el) => $(el).attr('href').split('=')[1].split('&')[0]).get();
@@ -538,10 +596,10 @@ async function scrapeInitiative(term, initiativeId, url) {
   }
 }
 
-
 module.exports = {
     getInitiatives,
     getRepresentatives,
+    scrapeComissions,
     getTerms,
     getParliamentGroups,
     generateInitiativesURLs,

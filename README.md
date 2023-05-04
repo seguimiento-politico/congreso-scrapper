@@ -20,10 +20,12 @@ Dada la ingente cantidad de datos, hemos descartado la opción inicialmente impl
     - [x] Composición de las legislaturas
         - [x] diputados/as. 
         - [x] grupos parlamentarios y partidos
+        - [x] comisiones
+        - [ ] subcomisiones
     - [ ] Información relevante de cada iniciativa
         - [ ] Votaciones
         - [ ] Intervenciones
-        - [ ] Documentos/publicaciones
+        - [x] Documentos/publicaciones
 - [ ] ~~Desarrollar y publicar una API REST~~ (opción descartada, será parte de otro repositorio distinto)
 
 ## Instalación

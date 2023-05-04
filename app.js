@@ -14,6 +14,7 @@ async function initialBasicScrapping() {
     await scrapperController.fetchTerms();
     await scrapperController.fetchParliamentGroups();
     await scrapperController.fetchRepresentatives();
+    await scrapperController.fetchComissions();
     await scrapperController.fetchInitiatives(); //fetches initiatives and topology at the same time
   } catch (error) {
     console.error('Error in scrapperController', error);
@@ -32,6 +33,7 @@ async function OneTermBasicScrapping(term) {
   await scrapperController.fetchTerms();
   await scrapperController.fetchParliamentGroups({ term: term });
   await scrapperController.fetchRepresentatives({ term: term });
+  await scrapperController.fetchComissions({ term: term });
   await scrapperController.fetchInitiatives({ term: term }); //fetches initiatives and topology at the same time
   process.exit(0); // Exit with a success code (0)
 }
