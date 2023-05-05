@@ -62,13 +62,13 @@ async function setRequest(method, request_url, params) {
   // Construye los encabezados de la solicitud
   const headers = setRequestHeaders(request_url, cookies);
 
-  // Construye el objeto URLSearchParams con los parámetros de consulta
-  const queryParams = new URLSearchParams();
-  for (const key in params) {
-    queryParams.append(key, params[key]);
-  }
-
   if(method.toUpperCase() == 'GET' ) {
+    // Construye el objeto URLSearchParams con los parámetros de consulta
+    const queryParams = new URLSearchParams();
+    for (const key in params) {
+      queryParams.append(key, params[key]);
+    }
+
     //set axios config
     const config = {
       method: 'GET',
@@ -385,41 +385,49 @@ async function scrapeComissions(filters = {}) {
   const appliedFilters = { ...defaultFilters, ...filters };
 
   // Form params to send as form data
-  let formParams = { 
+  let params = { 
+    p_p_id: 'organos',
+    p_p_lifecycle: '0',
+    p_p_state: 'normal',
+    p_p_mode: 'view',
     _organos_selectedLegislatura: (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term),
   };
 
   let request_url = `${urls.https}${paths.comissions}`;
-  const config = await setRequest('GET', request_url, formParams);
-  
+  const config = await setRequest('GET', request_url, params);
+
   try {
     const response = await axios(config);
     if (response.status === 200) {
       const $ = cheerio.load(response.data);
       const results = [];
       let currentType = '';
-
+  
       const portletOrganos = $('#portlet_organos');
-
+  
       portletOrganos.find('h2, h3, div > a').each((_, element) => {
         const tagName = $(element).prop('tagName');
-
+  
         if (tagName === 'H3') {
           currentType = $(element).text().trim();
         } else if (tagName === 'A' && $(element).hasClass('isComision')) {
           const href = $(element).attr('href');
           const name = $(element).text().trim();
-          const code = /_organos_codComision=([^&]+)/.exec(href)?.[1] || null;
+          let code = /_organos_codComision=([^&]+)/.exec(href)?.[1] || null;
+          if (code == null) code = /_organos_selectedSuborgano=([^&]+)/.exec(href)?.[1] || null;
           results.push({ code, name, type: currentType });
         }
       });
-
-      return results;
+  
+      // Remove duplicates based on commission code
+      const uniqueResults = Array.from(new Map(results.map((item) => [item.code, item])).values());
+  
+      return uniqueResults;
     } else {
-        console.error('Comissions [ERROR]', 'Error en la solicitud');
+      console.error('Comissions [ERROR]', 'Error en la solicitud');
     }
   } catch (error) {
-      console.error('Comissions [ERROR]', error);
+    console.error('Comissions [ERROR]', error);
   }
 
 }

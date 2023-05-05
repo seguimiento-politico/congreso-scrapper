@@ -17,7 +17,7 @@ const paths = {
     groups: '/es/grupos/composicion-en-la-legislatura?p_p_id=grupos&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=gruposSearch&p_p_cacheability=cacheLevelPage',
     publications: '/es/busqueda-de-publicaciones',
     publication: '/es/busqueda-de-publicaciones?p_p_id=publicaciones&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_publicaciones_mode=mostrarTextoIntegro',
-    comissions: '/es/comisiones?p_p_id=organos&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view',
+    comissions: '/es/comisiones',
     comission_composition: '/es/organos/composicion-en-la-legislatura?p_p_id=organos&p_p_lifecycle=0&p_p_state=normal&p_p_mode=view&_organos_selectedOrganoSup=-20', // &_organos_selectedLegislatura: "XIV", _organos_compoHistorica: "true" POST
     subcomission_composition: '/es/organos/composicion-en-la-legislatura?p_p_id=organos&p_p_lifecycle=2&p_p_state=normal&p_p_mode=view&p_p_resource_id=searchOrgano&p_p_cacheability=cacheLevelPage', //&_organos_selectedLegislatura=XIV&_organos_selectedOrganoSup=301&_organos_selectedSuborgano=301201
 };              
