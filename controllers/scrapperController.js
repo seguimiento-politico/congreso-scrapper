@@ -114,6 +114,39 @@ async function fetchComissions(filters = {}) {
   }
 }
 
+async function fetchSubcomissions(filters = {}) {
+  console.log(`Subcomissions [Fetching]`);
+
+  if (Object.keys(filters).length === 0) {
+    filters.term = 'all';
+  }
+  
+  const allTerms = await Term.getAllTerms();
+  const totalTerms = (filters.term == 'all') ? allTerms.length : 1;
+  const startTerm = (totalTerms === 1) ? parseInt(filters.term) : 0;
+ 
+  //loop every term
+  for (let i = startTerm; i < startTerm + totalTerms; i++) {
+    if (totalTerms > 1) {
+      filters.term = i.toString(); // Actualiza el valor de idLegislatura
+    }
+
+    const results = await congressUtils.scrapeSubcomissions(filters);
+
+    // loop every subcommission
+    for (let x = 0; x < results.length; x++) {
+      const subcommissionData = results[x];
+
+      // Update subcommission in the database
+      const commissionCode = subcommissionData.code.substring(0, 3);
+      const termInstance = new Term();
+      await termInstance.updateTermSubcommission(filters.term, commissionCode, subcommissionData);
+
+    }
+
+    console.log(`Subcomissions -> term: ${i} - total: ${results.length} [Done]`);
+  }
+}
 
 
 //diputados
@@ -199,5 +232,6 @@ module.exports = {
     fetchRepresentatives,
     fetchParliamentGroups,
     fetchInitiativesContent,
-    fetchComissions
+    fetchComissions,
+    fetchSubcomissions
 };

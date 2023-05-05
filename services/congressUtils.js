@@ -432,6 +432,57 @@ async function scrapeComissions(filters = {}) {
 
 }
 
+// subcomisiones y ponencias
+async function scrapeSubcomissions(filters = {}) {
+  let defaultFilters = {
+    term: '0',  
+  };
+
+  // Mezcla los filtros proporcionados con los predeterminados
+  const appliedFilters = { ...defaultFilters, ...filters };
+
+  // Form params to send as form data
+  let params = { 
+    p_p_id: 'organos',
+    p_p_lifecycle: '0',
+    p_p_state: 'normal',
+    p_p_mode: 'view',
+    _organos_selectedLegislatura: (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term),
+  };
+
+  let request_url = `${urls.https}${paths.subcomissions}`;
+  const config = await setRequest('GET', request_url, params);
+
+  try {
+    const response = await axios(config);
+    if (response.status === 200) {
+      const $ = cheerio.load(response.data);
+      const results = [];
+  
+      const portletOrganos = $('#portlet_organos');
+
+      portletOrganos.find('ul > li > a').each((_, element) => {
+        const href = $(element).attr('href');
+        const name = $(element).text().trim();
+        let code = /_organos_codSubcomision=([^&]+)/.exec(href)?.[1] || null;
+        if (code == null) code = /_organos_selectedSuborgano=([^&]+)/.exec(href)?.[1] || null;
+        let commissionCode = code ? code.substring(0, 3) : null;
+        results.push({ code, name, commissionCode });
+      });
+  
+      // Remove duplicates based on subcommission code
+      const uniqueResults = Array.from(new Map(results.map((item) => [item.code, item])).values());
+  
+      return uniqueResults;
+    } else {
+      console.error('Subcomissions [ERROR]', 'Error en la solicitud');
+    }
+  } catch (error) {
+    console.error('Subcomissions [ERROR]', error);
+  }
+}
+
+
 //composición grupos parlamentarios 
 async function getParliamentGroups(filters = {}) {  
   let defaultFilters = {
@@ -608,6 +659,7 @@ module.exports = {
     getInitiatives,
     getRepresentatives,
     scrapeComissions,
+    scrapeSubcomissions,
     getTerms,
     getParliamentGroups,
     generateInitiativesURLs,

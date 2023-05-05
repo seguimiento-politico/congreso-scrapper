@@ -9,7 +9,7 @@ const comissionSchema = new mongoose.Schema({
   name: String,
   code: String,
   type: String,
-  subcomissionSchema: [subcomissionSchema]
+  subcomissions: [subcomissionSchema]
 });
 
 const partiesSchema = new mongoose.Schema({
@@ -129,6 +129,32 @@ termSchema.methods.updateTermCommission = async function (term, commissionData) 
         existingTerm.comissions.push(commissionData);
         await existingTerm.save();
       }
+    }
+  } else {
+    console.log(`Unable. Term ${term} not found.`);
+  }
+};
+
+termSchema.methods.updateTermSubcommission = async function (term, commissionCode, subcommissionData) {
+  const existingTerm = await Term.findOne({ term: term });
+
+  if (existingTerm) {
+    // Encuentra la comisión a la que pertenece la subcomisión
+    const existingCommission = existingTerm.comissions.find(c => c.code === commissionCode);
+
+    if (existingCommission) {
+      // Verifica si la subcomisión ya existe
+      const subcommissionExists = existingCommission.subcomissions.some(
+        (subcommission) => subcommission.code === subcommissionData.code
+      );
+
+      // Si no existe, agrégala a la comisión
+      if (!subcommissionExists) {
+        existingCommission.subcomissions.push(subcommissionData);
+        await existingTerm.save();
+      }
+    } else {
+      console.log(`Unable to find commission with code ${commissionCode} in term ${term}`);
     }
   } else {
     console.log(`Unable. Term ${term} not found.`);

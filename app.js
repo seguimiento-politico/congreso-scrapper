@@ -34,6 +34,7 @@ async function OneTermBasicScrapping(term) {
   await scrapperController.fetchParliamentGroups({ term: term });
   await scrapperController.fetchRepresentatives({ term: term });
   await scrapperController.fetchComissions({ term: term });
+  await scrapperController.fetchSubcomissions({ term: term });
   await scrapperController.fetchInitiatives({ term: term }); //fetches initiatives and topology at the same time
   process.exit(0); // Exit with a success code (0)
 }
