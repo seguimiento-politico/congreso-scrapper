@@ -2,6 +2,8 @@ const Initiative = require('../models/initiative');
 const Term = require('../models/term');
 const Topology = require('../models/topology');
 const Representative = require('../models/representative');
+const Comission = require('../models/comission');
+const Group = require('../models/group');
 
 const congressUtils = require('../services/congressUtils');
 
@@ -76,11 +78,11 @@ async function fetchComissions(filters = {}) {
   if (Object.keys(filters).length === 0) {
     filters.term = 'all';
   }
-  
+
   const allTerms = await Term.getAllTerms();
   const totalTerms = (filters.term == 'all') ? allTerms.length : 1;
   const startTerm = (totalTerms === 1) ? parseInt(filters.term) : 0;
- 
+
   //loop every term
   for (let i = startTerm; i < startTerm + totalTerms; i++) {
     if (totalTerms > 1) {
@@ -93,21 +95,12 @@ async function fetchComissions(filters = {}) {
     for (let x = 0; x < results.length; x++) {
       const commissionData = results[x];
 
-      // Update commission in the database
-      const existingTerm = await Term.findOne({ term: filters.term });
-
-      if (existingTerm) {
-        const commissionExists = existingTerm.comissions.some(
-          (commission) => commission.code === commissionData.code
-        );
-
-        if (!commissionExists) {
-          existingTerm.comissions.push(commissionData);
-          await existingTerm.save();
-        }
-      } else {
-        console.log(`Unable. Term ${filters.term} not found.`);
-      }
+      // Save commission in the Comission database
+      await Comission.updateOne(
+        { term: filters.term, code: commissionData.code },
+        { $set: commissionData },
+        { upsert: true }
+      );
     }
 
     console.log(`Comissions -> term: ${i} - total: ${results.length} [Done]`);
@@ -120,11 +113,11 @@ async function fetchSubcomissions(filters = {}) {
   if (Object.keys(filters).length === 0) {
     filters.term = 'all';
   }
-  
+
   const allTerms = await Term.getAllTerms();
   const totalTerms = (filters.term == 'all') ? allTerms.length : 1;
   const startTerm = (totalTerms === 1) ? parseInt(filters.term) : 0;
- 
+
   //loop every term
   for (let i = startTerm; i < startTerm + totalTerms; i++) {
     if (totalTerms > 1) {
@@ -137,11 +130,12 @@ async function fetchSubcomissions(filters = {}) {
     for (let x = 0; x < results.length; x++) {
       const subcommissionData = results[x];
 
-      // Update subcommission in the database
+      // Save subcommission in the Comission database
       const commissionCode = subcommissionData.code.substring(0, 3);
-      const termInstance = new Term();
-      await termInstance.updateTermSubcommission(filters.term, commissionCode, subcommissionData);
-
+      await Comission.updateOne(
+        { term: filters.term, code: commissionCode, "subcomissions.code": { $ne: subcommissionData.code } },
+        { $push: { subcomissions: subcommissionData } }
+      );
     }
 
     console.log(`Subcomissions -> term: ${i} - total: ${results.length} [Done]`);
@@ -172,8 +166,8 @@ async function fetchRepresentatives(filters = {}) {
     for (let x = 0; x < results.representatives.length; x++) {
       const newRepresentative = new Representative();
       const isNewRepresentative = await newRepresentative.saveRepresentative(results.representatives[x], results.representatives_terms[x]);
-      const termInstance = new Term();
-      await termInstance.updateTermComposition(results.representatives_terms[x].term, results.representatives_terms[x].parliamentGroup, results.representatives_terms[x].party, isNewRepresentative);
+      const groupInstance = new Group();
+      await groupInstance.updateComposition(results.representatives_terms[x].term, results.representatives_terms[x].parliamentGroup, results.representatives_terms[x].party, isNewRepresentative);
     } 
   
   console.log(`Representatives -> term: ${i} - total: ${results.representatives.length} [Done]`);
@@ -204,7 +198,7 @@ async function fetchParliamentGroups(filters = {}) {
     filters.term = 'all';
   }
   console.log(`Parliament Groups [Fetching]`);
-  
+
   const allTerms = await Term.getAllTerms();
   const totalTerms = (filters.term == 'all') ? allTerms.length : 1;
   const startTerm = (totalTerms === 1) ? parseInt(filters.term) : 0;
@@ -219,13 +213,13 @@ async function fetchParliamentGroups(filters = {}) {
 
     // loop every group
     for (let x = 0; x < results.length; x++) {
-      const termInstance = new Term();
-      await termInstance.updateTermParliamentGroup(filters.term, results[x]);
+      const groupInstance = new Group();
+      await groupInstance.updateParliamentGroup(filters.term, results[x]);
     }
     console.log(`Parliament Groups -> term: ${i} - total: ${results.length} [Done]`);
-  } 
-
+  }
 }
+
 module.exports = {
     fetchInitiatives,
     fetchTerms,

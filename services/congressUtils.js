@@ -154,8 +154,10 @@ function transformPairlamentGroupData(data){
 
   const simplifiedData = groupsArray.map(group => {
     const newItem = {
+      term: group.idLegislatura,
       name: group.grpDesc,
-      code: group.codOrg
+      code: group.codOrg,
+      seats: group.numMiembros
     };    
     return newItem;
   });

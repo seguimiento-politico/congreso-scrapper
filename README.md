@@ -21,7 +21,7 @@ Dada la ingente cantidad de datos, hemos descartado la opción inicialmente impl
         - [x] diputados/as. 
         - [x] grupos parlamentarios y partidos
         - [x] comisiones
-        - [ ] subcomisiones
+        - [x] subcomisiones
     - [ ] Información relevante de cada iniciativa
         - [ ] Votaciones
         - [ ] Intervenciones
