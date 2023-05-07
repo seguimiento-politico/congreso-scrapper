@@ -37,7 +37,8 @@ Dada la ingente cantidad de información, hemos descartado la opción inicialmen
         - [ ] Iniciativas relacionadas
         - [ ] Votaciones
         - [ ] Intervenciones
-        - [x] Documentos/publicaciones
+        - [x] Publicaciones (Diarios de sesión, BOCGs y BOEs)
+        - [x] Ponentes
 - [ ] ~~Desarrollar y publicar una API REST~~ (opción descartada, será parte de otro repositorio distinto)
 
 ## Instalación

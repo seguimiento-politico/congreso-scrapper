@@ -5,7 +5,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 // Define the scrapping URL and method
-const { urls, paths, docs } = require('../config/congressUtils');
+const { urls, endPoints, pages, docs } = require('../config/congressUtils');
 const convertionUtils = require('./convertionUtils');
 const { url } = require('inspector');
 
@@ -285,36 +285,13 @@ async function getInitiatives(page, filters = {}) {
   // Mezcla los filtros proporcionados con los predeterminados
   const appliedFilters = { ...defaultFilters, ...filters };
 
-  // Form params to send as form data
-  let formParams = {
-    p_p_id: 'iniciativas',
-    p_p_lifecycle: '2',
-    p_p_resource_id: 'filtrarListado',
-    p_p_cacheability: 'cacheLevelPage',
-    _iniciativas_legislatura: (appliedFilters.term == 'all') ? 'C' : appliedFilters.term,
-    _iniciativas_titulo: '',
-    _iniciativas_texto: '',
-    _iniciativas_autor: '',
-    _iniciativas_competencias: '',
-    _iniciativas_tipo: '',
-    _iniciativas_tramitacion: '',
-    _iniciativas_expedientes: '',
-    _iniciativas_hasta: '',
-    _iniciativas_tipo_tramitacion: '',
-    _iniciativas_comision_competente: '',
-    _iniciativas_fase: '',
-    _iniciativas_organo: '',
-    _iniciativas_fechaDe: '0',
-    _iniciativas_fechaDesde: '',
-    _iniciativas_fechaHasta: '',
-    _iniciativas_materias: '',
-    _iniciativas_iniciativas_relacionadas: '',
-    _iniciativas_iniciativas_origen: '',
-    _iniciativas_iscc: '',
-    _iniciativas_paginaActual: page
-  };
+  // construct request
+  const request_url = `${urls.https}${endPoints.initiatives.path}`;
 
-  const request_url = `${urls.https}${paths.initiatives}`;
+  let formParams = endPoints.initiatives.params;
+  formParams['_iniciativas_legislatura'] = (appliedFilters.term == 'all') ? 'C' : appliedFilters.term;
+  formParams['_iniciativas_paginaActual'] = page;
+
   const config = await setRequest('GET', request_url, formParams);
 
   try {
@@ -357,19 +334,18 @@ async function getRepresentatives(filters = {}) {
 
   // Mezcla los filtros proporcionados con los predeterminados
   const appliedFilters = { ...defaultFilters, ...filters };
-  
-  // Form params to send as form data
-  let formParams = { 
-    _diputadomodule_idLegislatura: (appliedFilters.term == 'all') ? '-1' : appliedFilters.term,
-    _diputadomodule_genero: (appliedFilters.gender == 'all') ? '0' : (appliedFilters.gender == '1') ? 'M' : 'F', 
-    _diputadomodule_grupo: appliedFilters.group, 
-    _diputadomodule_tipo: (appliedFilters.type == 'all') ? '2' : appliedFilters.type,
-    _diputadomodule_formacion: appliedFilters.party, 
-    _diputadomodule_filtroProvincias: (appliedFilters.provinces == 'all') ? '[]' : appliedFilters.provinces, 
-    _diputadomodule_nombreCircunscripcion: (appliedFilters.circunscripcion == 'all') ? '' : appliedFilters.circunscripcion,
-  };
 
-  let request_url = `${urls.https}${paths.representatives}`;
+  // construct request
+  const request_url = `${urls.https}${endPoints.representatives.path}`;
+  let formParams = endPoints.representatives.params;
+  formParams['_diputadomodule_idLegislatura'] = (appliedFilters.term == 'all') ? '-1' : appliedFilters.term;
+  formParams['_diputadomodule_genero'] = (appliedFilters.gender == 'all') ? '0' : (appliedFilters.gender == '1') ? 'M' : 'F';
+  formParams['_diputadomodule_grupo'] = appliedFilters.group;
+  formParams['_diputadomodule_tipo'] = (appliedFilters.type == 'all') ? '2' : appliedFilters.type;
+  formParams['_diputadomodule_formacion'] = appliedFilters.party;
+  formParams['_diputadomodule_filtroProvincias'] = (appliedFilters.provinces == 'all') ? '[]' : appliedFilters.provinces;
+  formParams['_diputadomodule_nombreCircunscripcion'] = (appliedFilters.circunscripcion == 'all') ? '' : appliedFilters.circunscripcion;
+  
   const config = await setRequest('POST', request_url, formParams);
 
   try {
@@ -394,16 +370,11 @@ async function scrapeComissions(filters = {}) {
   // Mezcla los filtros proporcionados con los predeterminados
   const appliedFilters = { ...defaultFilters, ...filters };
 
-  // Form params to send as form data
-  let params = { 
-    p_p_id: 'organos',
-    p_p_lifecycle: '0',
-    p_p_state: 'normal',
-    p_p_mode: 'view',
-    _organos_selectedLegislatura: (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term),
-  };
+  // construct request
+  const request_url = `${urls.https}${endPoints.comissions.path}`;
+  let params = endPoints.comissions.params;
+  params['_organos_selectedLegislatura'] = (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term);
 
-  let request_url = `${urls.https}${paths.comissions}`;
   const config = await setRequest('GET', request_url, params);
 
   try {
@@ -451,16 +422,11 @@ async function scrapeSubcomissions(filters = {}) {
   // Mezcla los filtros proporcionados con los predeterminados
   const appliedFilters = { ...defaultFilters, ...filters };
 
-  // Form params to send as form data
-  let params = { 
-    p_p_id: 'organos',
-    p_p_lifecycle: '0',
-    p_p_state: 'normal',
-    p_p_mode: 'view',
-    _organos_selectedLegislatura: (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term),
-  };
-
-  let request_url = `${urls.https}${paths.subcomissions}`;
+  // construct request
+  let request_url = `${urls.https}${endPoints.subcomissions.path}`;
+  let params = endPoints.subcomissions.params;
+  params['_organos_selectedLegislatura'] = (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term);
+  
   const config = await setRequest('GET', request_url, params);
 
   try {
@@ -502,12 +468,11 @@ async function getParliamentGroups(filters = {}) {
   // Mezcla los filtros proporcionados con los predeterminados
   const appliedFilters = { ...defaultFilters, ...filters };
 
-   // Form params to send as form data
-  let formParams = { 
-    _grupos_idLegislatura: (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term),
-  };
+  // construct request
+  let request_url = `${urls.https}${endPoints.groups.path}`;
+  let formParams = endPoints.groups.params;
+  formParams['_grupos_idLegislatura'] = (appliedFilters.term == '0') ? '0' : convertionUtils.intToRoman(appliedFilters.term);
 
-  let request_url = `${urls.https}${paths.groups}`;
   const config = await setRequest('POST', request_url, formParams);
 
   try {
@@ -526,7 +491,7 @@ async function getParliamentGroups(filters = {}) {
 //legislaturas
 async function getTerms() {
   try {
-    const response = await axios.get(`${urls.https}${paths.terms}`);
+    const response = await axios.get(`${urls.https}${endPoints.initiatives.path}`);
 
     const $ = cheerio.load(response.data);
 
@@ -564,7 +529,17 @@ function generateInitiativesURLs(initiatives) {
   let initiatives_urls = [];
   for( let i = 0; i < initiatives.length; i++) {
     const term = convertionUtils.intToRoman(initiatives[i].term);
-    const initiative_url = `${urls.https}${paths.initiative}&_iniciativas_legislatura=${term}&_iniciativas_id=${initiatives[i].initiativeId}`;
+    let initiative_url = `${urls.https}${endPoints.initiative.path}`;
+    const params = endPoints.initiative.params;
+    params['_iniciativas_legislatura'] = term;
+    params['_iniciativas_id'] = initiatives[i].initiativeId;
+
+    const queryParams = new URLSearchParams();
+    for (const key in params) {
+      queryParams.append(key, params[key]);
+    }
+
+    initiative_url = initiative_url + '?' + queryParams.toString();
     initiatives_urls.push({term: initiatives[i].term, initiativeId: initiatives[i].initiativeId, url: initiative_url});
   }
 
