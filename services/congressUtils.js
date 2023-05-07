@@ -571,22 +571,21 @@ function generateInitiativesURLs(initiatives) {
   return initiatives_urls;
 }
 
+// obtiene todos los detalles relativos a una iniciativa
 async function scrapeInitiative(term, initiativeId, url) {
   console.log(`legislatura: ${term} - iniciativa: ${initiativeId}`);
   try {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
-    const container = $('.titular-seccion');
-
-    const presentedAndQualifiedDates = container.find('.f-present').text().trim().split(',').map(date => date.trim());
-    const presentedDate = presentedAndQualifiedDates[0].split(' ')[3];
-    const qualifiedDate = presentedAndQualifiedDates.length > 1 ? presentedAndQualifiedDates[1].split(' ')[3] : null;
+    const container = $('.iniciativa');
 
     const dossierUrls = container.find('a[href*="dosieres"]').map((_, el) => $(el).attr('href')).get();
 
     const authorsList = container.find('h3:contains("Autor")').next('ul');
+    
     const authors = authorsList.find('li').map((_, el) => {
       const authorElement = $(el);
+      
       const authorLink = authorElement.find('a');
       const authorText = authorElement.text().trim();
 
@@ -669,22 +668,34 @@ async function scrapeInitiative(term, initiativeId, url) {
     const initiativeData = {
       term: term,
       initiativeId,
-      presentedDate,
-      qualifiedDate,
       dossierUrls,
       author: authors,
-      status,
-      result,
+      status: status,
+      result: result,
       tramitationType: type,
-      competentCommissions,
-      parlamentaryCodes,
-      initiativeTramitation,
-      bulletins,
-      diaries,
-      boes
+      competentCommissions: competentCommissions,
+      parlamentaryCodes: parlamentaryCodes,
+      initiativeTramitation: initiativeTramitation,
+      bulletins: bulletins,
+      diaries: diaries,
+      boes: boes
     };
 
-    return initiativeData;
+    
+    const filteredData = {};
+    for (const [key, value] of Object.entries(initiativeData)) {
+      
+      if (Array.isArray(value)) { 
+        if(value.length !== 0) // if is not an empty array
+          filteredData[key] = value;
+      }else {
+        if (value !== null && value !== undefined) // if is not an empty variable
+          filteredData[key] = value;
+      }
+    }
+
+    return filteredData;
+
   } catch (error) {
     console.error(`Error al extraer información de la iniciativa: ${error.message}`);
   }
