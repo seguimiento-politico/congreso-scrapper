@@ -9,45 +9,44 @@ const congressUtils = require('../services/congressUtils');
 
 //iniciativas
 async function fetchInitiatives(filters = {}) {
-    let page = 1;
+  let page = 1;
 
-    if (Object.keys(filters).length === 0) {
-      filters.term = 'all';
-    }
+  if (Object.keys(filters).length === 0) {
+    filters.term = 'all';
+  }
 
-    console.log(`Initiatives [Fetching]`);
-    try {
-      let results = await congressUtils.getInitiatives(page, filters);
-      console.log('Initiatives -> total:', parseInt(results.items));
+  console.log(`Initiatives [Fetching]`);
+  try {
+    let results = await congressUtils.getInitiatives(page, filters);
+    console.log('Initiatives -> total:', parseInt(results.items));
 
-      //save initiatives
-      const initiative = new Initiative(results.initiativeData);
-      await initiative.saveInitiative(results.initiativeData);
+    // Create initiative and topology instances
+    const initiative = new Initiative();
+    const topology = new Topology();
 
-      //save topology in catalog
-      const topology = new Topology(results.topologyData);
-      await topology.saveTopology(results.topologyData);
+    while (page <= results.pages) {
+      console.log('Initiatives -> Page:' + page + "/" + results.pages);
 
-      while (page <= results.pages) {
-        console.log('Initiatives -> Page:' + page + "/" + results.pages);
-        page++;
+      for (const initiativeData of results.initiatives) {
+        // Save the current initiative
+        await initiative.saveInitiative(initiativeData);
 
-        results = await congressUtils.getInitiatives(page, filters);
-        
-        //save initiatives
-        const initiative = new Initiative(results.initiativeData);
-        await initiative.saveInitiative(results.initiativeData);
-
-        //save topology in catalog
-        const topology = new Topology(results.topologyData);
-        await topology.saveTopology(results.topologyData);
+        // Save the current topology in catalog
+        await topology.saveTopology(initiativeData.topologyData);
       }
-  
-    } catch (error) {
-      console.error(`Initiatives [ERROR]`, error);
-      console.log(`Initiatives -> Last scrapped page:`, parseInt(page-1));
+
+      // Move to the next page and fetch results
+      page++;
+      if (page <= results.pages) {
+        results = await congressUtils.getInitiatives(page, filters);
+      }
     }
-    console.log(`Initiatives [Done]`);
+
+  } catch (error) {
+    console.error(`Initiatives [ERROR]`, error);
+    console.log(`Initiatives -> Last scrapped page:`, parseInt(page - 1));
+  }
+  console.log(`Initiatives [Done]`);
 }
 
 //contenido de las iniciativas

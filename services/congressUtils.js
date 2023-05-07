@@ -139,9 +139,8 @@ function transformInitiativeData(data) {
       initiativeId: iniciativa.id_iniciativa,
       initiativeType: iniciativa.id_iniciativa.split('/')[0],
       title: iniciativa.titulo,
-      startDate: iniciativa.fecha_presentado,
-      endDate: iniciativa.fecha_calificado,
-      author: iniciativa.autor,
+      presentedDate: iniciativa.fecha_presentado,
+      qualifiedDate: iniciativa.fecha_calificado,
       result: iniciativa.resultado_tram
     };    
     return newItem;
@@ -311,7 +310,8 @@ async function getInitiatives(page, filters = {}) {
     _iniciativas_materias: '',
     _iniciativas_iniciativas_relacionadas: '',
     _iniciativas_iniciativas_origen: '',
-    _iniciativas_iscc: ''
+    _iniciativas_iscc: '',
+    _iniciativas_paginaActual: page
   };
 
   const request_url = `${urls.https}${paths.initiatives}`;
@@ -326,7 +326,15 @@ async function getInitiatives(page, filters = {}) {
       let initiativeData = transformInitiativeData(data);
       let topologyData = transformTopologyData(data);
 
-      return { items, pages, initiativeData, topologyData };
+        // Group initiatives with their respective topology data
+      const initiatives = initiativeData.map((initiative, index) => {
+        return {
+          ...initiative,
+          topologyData: topologyData[index],
+        };
+      });
+
+      return { items, pages, initiatives };
     } else {
       console.error('Initiatives [ERROR]', 'Error en la solicitud');
     }
@@ -576,7 +584,32 @@ async function scrapeInitiative(term, initiativeId, url) {
 
     const dossierUrls = container.find('a[href*="dosieres"]').map((_, el) => $(el).attr('href')).get();
 
-    const author = container.find('h3:contains("Autor")').next('ul').find('li').map((_, el) => $(el).text().trim()).get();
+    const authorsList = container.find('h3:contains("Autor")').next('ul');
+    const authors = authorsList.find('li').map((_, el) => {
+      const authorElement = $(el);
+      const authorLink = authorElement.find('a');
+      const authorText = authorElement.text().trim();
+
+      if (authorLink.length > 0) {
+        const url = new URL(authorLink.attr('href'), 'https://example.com');
+        const searchParams = new URLSearchParams(url.search);
+
+        if (searchParams.has('codParlamentario')) {
+          return { type: 'diputado', id: searchParams.get('codParlamentario') };
+        } else if (searchParams.has('idGrupo')) {
+          return { type: 'grupo', id: searchParams.get('idGrupo') };
+        }
+      } else {
+        if (authorText.toLowerCase().startsWith('comisión')) {
+          return { type: 'comission', name: authorText, id: null };
+        } else if (authorText.toLowerCase().startsWith('subcomisión')) {
+          return { type: 'subcomission', name: authorText, id: null };
+        } else {
+          return { type: 'other', name: authorText };
+        }
+      }
+    }).get();
+
     const result = container.find('.resultadoTramitacion').text().trim() || null;
     const status = container.find('.situacionActual').text().trim() || null;
     const type = container.find('.tipoTramitacion').text().trim() || null;
@@ -639,7 +672,7 @@ async function scrapeInitiative(term, initiativeId, url) {
       presentedDate,
       qualifiedDate,
       dossierUrls,
-      author,
+      author: authors,
       status,
       result,
       tramitationType: type,

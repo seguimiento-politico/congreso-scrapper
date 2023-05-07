@@ -1,5 +1,11 @@
 const mongoose = require('mongoose');
 
+const autorSchema = new mongoose.Schema({
+  type: String,
+  id: String,
+  name: String
+});
+
 const initiativeSchema = new mongoose.Schema({
   term: String,
   initiativeId: String,
@@ -8,7 +14,7 @@ const initiativeSchema = new mongoose.Schema({
   presentedDate: String,
   qualifiedDate: String,
   dossierUrls: [String],
-  author: [String],
+  author: [autorSchema],
   status: String,
   result: String,
   tramitationType: String,
@@ -57,7 +63,7 @@ initiativeSchema.methods.saveInitiative = async function(data) {
   
   if (existingInitiative) {
     // will only update the initiative in case of endDate or result change; the rest is ignored.
-    if (existingInitiative.endDate !== data.endDate || existingInitiative.result !== data.result) {
+    if (existingInitiative.qualifiedDate !== data.qualifiedDate || existingInitiative.result !== data.result) {
       console.log("----------  Actualizada iniciativa --------------");
       console.log("iniciativa original:");
       console.log(existingInitiative);

@@ -3,6 +3,10 @@ const mongoose = require('mongoose');
 const subcomissionSchema = new mongoose.Schema({
   name: String,
   code: String,
+  initiatives: {
+    creation_request: String,
+    creation: String
+  }
 });
 
 const comissionSchema = new mongoose.Schema({
@@ -10,6 +14,10 @@ const comissionSchema = new mongoose.Schema({
   name: String,
   code: String,
   type: String,
+  initiatives: {
+    creation_request: String,
+    creation: String
+  },
   subcomissions: [subcomissionSchema]
 });
 
@@ -40,6 +48,37 @@ comissionSchema.methods.updateSubcommission = async function (term, commissionCo
     console.log(`Unable to find commission with code ${commissionCode} in term ${term}`);
   }
 };
+
+comissionSchema.methods.updateCommissionInitiatives = async function (term, commissionCode, initiativesData) {
+  const existingCommission = await Commission.findOne({ term: term, code: commissionCode });
+
+  if (existingCommission) {
+    existingCommission.initiatives = initiativesData;
+    await existingCommission.save();
+  } else {
+    console.log(`Unable to find commission with code ${commissionCode} in term ${term}`);
+  }
+};
+
+comissionSchema.methods.updateSubcommissionInitiatives = async function (term, commissionCode, subcommissionCode, initiativesData) {
+  const existingCommission = await Commission.findOne({ term: term, code: commissionCode });
+
+  if (existingCommission) {
+    const subcommissionIndex = existingCommission.subcomissions.findIndex(
+      (subcommission) => subcommission.code === subcommissionCode
+    );
+
+    if (subcommissionIndex !== -1) {
+      existingCommission.subcomissions[subcommissionIndex].initiatives = initiativesData;
+      await existingCommission.save();
+    } else {
+      console.log(`Unable to find subcommission with code ${subcommissionCode} in commission ${commissionCode} and term ${term}`);
+    }
+  } else {
+    console.log(`Unable to find commission with code ${commissionCode} in term ${term}`);
+  }
+};
+
 
 comissionSchema.statics.getAll = async function() {
   return await this.find({}).exec();
