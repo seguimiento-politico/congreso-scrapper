@@ -54,6 +54,39 @@ const initiativeSchema = new mongoose.Schema({
   ]
 });
 
+//filtra datos vacíos para evitar guardarlos en la base de datos
+// por razones que desconozco no funciona con los arrays [TODO] [PENDING]
+initiativeSchema.pre("save", function (next) {
+  const doc = this.toObject();
+
+  const isValidValue = (value) => {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
+    if (Array.isArray(value) && value.length === 0) {
+      return false;
+    }
+
+    return true;
+  };
+
+  const filteredDoc = Object.fromEntries(
+    Object.entries(doc).filter(([key, value]) => isValidValue(value))
+  );
+
+  // Set the keys with empty arrays as undefined
+  for (const key in doc) {
+    if (!isValidValue(doc[key])) {
+      this[key] = undefined;
+    }
+  }
+
+  Object.assign(this, filteredDoc);
+  next();
+});
+
+
 //crea o actualiza los campos básicos de las iniciativas dadas
 initiativeSchema.methods.saveInitiative = async function(data) {
   const existingInitiative = await Initiative.findOne({
