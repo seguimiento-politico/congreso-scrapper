@@ -1,3 +1,7 @@
+/* ---------- DEPENDENCIES ---------- */
+
+
+/* ---------- MODELS ---------- */
 const Initiative = require('../models/initiative');
 const Term = require('../models/term');
 const Topology = require('../models/topology');
@@ -5,6 +9,7 @@ const Representative = require('../models/representative');
 const Comission = require('../models/comission');
 const Group = require('../models/group');
 
+/* ---------- INSTANCES ---------- */
 const congressUtils = require('../services/congressUtils');
 
 //iniciativas
@@ -140,7 +145,6 @@ async function fetchSubcomissions(filters = {}) {
     console.log(`Subcomissions -> term: ${i} - total: ${results.length} [Done]`);
   }
 }
-
 
 //diputados
 async function fetchRepresentatives(filters = {}) {

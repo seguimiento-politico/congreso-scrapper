@@ -1,10 +1,17 @@
+/* ---------- DEPENDENCIES ---------- */
 const mongoose = require('mongoose');
 
+/* ---------- CONFIGURATION ---------- */
+const dbconfig = require('../config/database.js');
+
 const config = {
-  connectionString: 'mongodb://127.0.0.1:27017/seguimiento-politico?directConnection=true&serverSelectionTimeoutMS=2000&appName=Congreso-scrapper v1',
+  connectionString: `mongodb://${dbconfig.host}:${dbconfig.port}/${dbconfig.name}`,
   connectionOptions: {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    directConnection: true,
+    serverSelectionTimeoutMS: 2000, 
+    appName: 'Congreso-scrapper',
   },
 };
 

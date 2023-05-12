@@ -1,8 +1,26 @@
+/* ---------- DEPENDENCIES ---------- */
 const readline = require('readline');
+const dbconfig = require('./config/database');
 
-const mongoDB = require('./config/mongoDB'); // Import the MongoDB functions
 const Term = require('./models/term'); // Import the Term model
 const scrapperController = require('./controllers/scrapperController');
+
+let database;
+
+switch (dbconfig.engine) {
+  case 'mongodb':
+    database = require('./services/mongoDB');
+    break;
+  case 'mysql':
+    database = require('./services/MySQL');
+    break;
+  case 'postgresql':
+    database = require('./services/postgresql');
+    break;
+  // Agrega más casos según los motores de bases de datos que desees utilizar
+  default:
+    throw new Error(`Unsupported database engine: ${dbconfig.engine}`);
+}
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -63,7 +81,7 @@ async function requestTerm() {
 
 
 async function main() {
-  await mongoDB.connect(); // Connect to MongoDB
+  await database.connect(); // Connect to database
 
   rl.question('Por favor, elija una opción:\n1. initial Basic Scrapping (all terms, pairlament composition and initiatives) \n2. initial Detailed Scrapping (all terms initiatives relevant data)\n3. One Term Basic Scrapping\n4. One Term Detailed Scrapping\n\nX. Salir\n', async (option) => {
     try {
@@ -93,7 +111,7 @@ async function main() {
     } catch (error) {
       console.error('Error en la opción seleccionada', error);
     } finally {
-      await mongoDB.disconnect(); // Disconnect from MongoDB
+      await database.disconnect(); // Disconnect from database
       process.exit(0); // Exit with a success code (0)
     }
   });

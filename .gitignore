@@ -1,3 +1,16 @@
+# dependencies
 node_modules/
-devNotes.md
+
+# testing
+tests/
+
+# enviroments
+.env
+
+# config
+
+
+# misc
 d
+.DS_Store
+devNotes.md

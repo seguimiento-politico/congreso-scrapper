@@ -1,13 +1,14 @@
+/* ---------- DEPENDENCIES ---------- */
 const { request } = require('http');
 const https = require('https');
 const fs = require('fs').promises;
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { url } = require('inspector');
 
 // Define the scrapping URL and method
 const { urls, endPoints, pages, docs } = require('../config/congressUtils');
 const convertionUtils = require('./convertionUtils');
-const { url } = require('inspector');
 
 // Variable global para almacenar las cookies
 let storedCookies = null;
