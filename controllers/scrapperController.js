@@ -115,7 +115,7 @@ async function fetchBodyComposition(term = null, commissionCode = null) {
   console.log(`Body composition [Fetching]`);
 
   const comissions = await Comission.get(term, commissionCode);
-  console.log(comissions);
+
   //loop every comission
   for (const comission of comissions) {
     // Fetch and save composition of the comission

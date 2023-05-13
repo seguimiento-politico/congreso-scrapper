@@ -10,27 +10,7 @@ const rl = readline.createInterface({
   output: process.stdout
 });
 
-async function initialBasicScrapping() {
-  try {
-    await scrapperController.fetchTerms();
-    await scrapperController.fetchParliamentGroups();
-    await scrapperController.fetchRepresentatives();
-    await scrapperController.fetchComissions();
-    await scrapperController.fetchInitiatives(); //fetches initiatives and topology at the same time
-  } catch (error) {
-    console.error('Error in scrapperController', error);
-  }
-  
-  process.exit(0); // Exit with a success code (0)
-}
-
-async function initialDetailedScrapping() {
-  await scrapperController.fetchInitiativesContent();
-  await scrapperController.fetchBodyComposition();
-  process.exit(0); // Exit with a success code (0)
-}
-
-async function OneTermBasicScrapping(term) {
+async function BasicScrapping(term) {
   console.log('Basic Scrapping for term:', term);
   await scrapperController.fetchTerms();
   await scrapperController.fetchParliamentGroups({ term: term });
@@ -41,10 +21,17 @@ async function OneTermBasicScrapping(term) {
   process.exit(0); // Exit with a success code (0)
 }
 
-async function OneTermDetailedScrapping(term) {
+async function DetailedScrapping(term) {
   console.log('Detailed Scrapping for term:', term);
   await scrapperController.fetchInitiativesContent({ term: term });
   await scrapperController.fetchBodyComposition(term);
+  process.exit(0); // Exit with a success code (0)
+}
+
+async function CompleteScrapping(term) {
+  console.log('Complete Scrapping for term:', term);
+  await BasicScrapping(term);
+  await DetailedScrapping(term);
   process.exit(0); // Exit with a success code (0)
 }
 
@@ -55,7 +42,10 @@ async function requestTerm() {
     return a.term - b.term;
   });
   
-  const options = sortedTerms.map(l => `${l.term}`).join(', ');
+  let options = sortedTerms.map(l => `${l.term}`).join(', ');
+
+  // Add 'ALL' to options
+  options += ', ALL';
 
   return new Promise((resolve) => {
     rl.question(`Ingrese la legislatura que desea actualizar (${options}): `, (term) => {
@@ -64,33 +54,55 @@ async function requestTerm() {
   });
 }
 
-
 async function main() {
   await database.connect(); // Connect to database
 
-  rl.question('Por favor, elija una opción:\n1. initial Basic Scrapping (all terms, pairlament composition and initiatives) \n2. initial Detailed Scrapping (all terms initiatives relevant data)\n3. One Term Basic Scrapping\n4. One Term Detailed Scrapping\n\nX. Salir\n', async (option) => {
+  rl.question('Por favor, elija una opción:\n1. Basic Scrapping \n2. Detailed Scrapping\n3. Complete (Basic + Detailed) Scrapping\n\nX. Salir\n', async (option) => {
     try {
+      let term;
       switch (option) {
         case '1':
-          await initialBasicScrapping();
+          term = await requestTerm();
+          term = term.toUpperCase();
+          if (term === 'ALL') {
+            const terms = await Term.getAllTerms();
+            for (let t of terms) {
+              await BasicScrapping(t.term);
+            }
+          } else {
+            await BasicScrapping(term);
+          }
           break;
         case '2':
-          await initialDetailedScrapping();
+          term = await requestTerm();
+          term = term.toUpperCase();
+          if (term === 'ALL') {
+            const terms = await Term.getAllTerms();
+            for (let t of terms) {
+              await DetailedScrapping(t.term);
+            }
+          } else {
+            await DetailedScrapping(term);
+          }
           break;
         case '3':
           term = await requestTerm();
-          await OneTermBasicScrapping(term.toUpperCase());
-          break;
-        case '4':
-          term = await requestTerm();
-          await OneTermDetailedScrapping(term.toUpperCase());
+          term = term.toUpperCase();
+          if (term === 'ALL') {
+            const terms = await Term.getAllTerms();
+            for (let t of terms) {
+              await CompleteScrapping(t.term);
+            }
+          } else {
+            await CompleteScrapping(term);
+          }
           break;
         case 'x':
         case 'X':
           rl.close();
           break;
         default:
-          console.log('Opción no válida. Por favor, elija 1, 2, 3, 4 o X.');
+          console.log('Opción no válida. Por favor, elija 1, 2, 3 o X.');
           break;
       }
     } catch (error) {
@@ -100,8 +112,9 @@ async function main() {
       process.exit(0); // Exit with a success code (0)
     }
   });
-  
 }
 
 main();
+
+
 

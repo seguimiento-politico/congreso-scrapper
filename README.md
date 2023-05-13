@@ -45,25 +45,23 @@ Dada la ingente cantidad de información, hemos descartado la opción inicialmen
 Antes de ejecutar 'app.js' asegurate de haber instalado las dependencias correctamente mediante el comando:  "npm install".
 
 ## Guía para su uso
-Al ejecutar "node app.js", aparecerá un menú contextual con cinco (5) opciones, pulsando el número o letra de cada una de ellas se ejecutará la subrutina correspondiente. 
+Al ejecutar "node app.js", aparecerá un menú contextual con cinco (3) opciones, pulsando el número o letra de cada una de ellas se ejecutará la subrutina correspondiente. Cada opción de scrapping te permitirá elegir una legislatura concreta o todas "ALL".
 
 Las opciones en cuestión son:
-1. Initial Basic Scrapping: Tras instalar todo, tendrás que ejecutar esta opción la primera vez (tardará muchas horas en finalizar el scrapping). Se encargará de guardar en tu BBDD la siguiente info:
-    - Legislaturas y su composición en términos de "Grupos parlamentarios" y "Formaciones políticas".
-    - Registro histórico de diputados, junto con los datos relevantes como partido, circunscripción y fechas de alta y baja en el congreso.
+1. **Basic Scrapping**: Se encarga de registrar todos los datos básicos de cada legislatura, es decir:
+    - Legislaturas y su composición en términos de "Diputados/as", "Grupos parlamentarios" y "Formaciones políticas".
+    - Óganos de las legislaturas y su composición en términos de "Comisiones", "subcomisiones" y "diputados/as que los componen".
     - Registro de todas las iniciativas desde la "Legislatura constituyente" hasta la actualidad.
     - Topolología de iniciativas (el catálogo de todos los tipos de iniciativas)
 
-2. Initial Detailed Scrapping: Tras el paso anterior esta rutina se encargará (en proceso de desarrollo) de adjuntar a cada iniciativa existente su información relevante como:
+2. **Detailed Scrapping**: Tras el paso anterior esta rutina se encarga de adjuntar a cada iniciativa existente su información relevante como:
     - Votaciones
     - Intervenciones
     - Publicaciones
     - Otras Iniciativas relacionadas
-Al igual que en el caso anterior sólo se tendrá que ejecutar esta opción una vez.
 
-3. One Legislature Basic Scrapping: Esta opción está diseñada para rehacer el "paso 1" pero únicamente para una legislatura determinada. Su utilidad es la de mantener actualizada la información de la legislatura actual.
+3. **Complete (Basic + Detailed) Scrapping**: Esta opción realiza en un solo paso todo el "scrapping". Ojo, esta opción puede tomar mucho tiempo si se aplica a todas las legislaturas. Es recomendable usarla para una legislatura determinada. 
 
-4. One Legislature Detailed Scrapping: Al igual que en el "paso 2" añadirá la información relevante de cada iniciativa de la legislatura dada. (Es posible que esta función acabe desapareciendo para fusionarse con la anterior).
+x. **Salir**: Sin comentarios.
 
-5. Salir: Sin comentarios.
-
+**NOTA**: Para legislaturas pasadas solo será necesario ejecutar el scrapping (básico y detallado) una vez. Para la legislatura activa habrá que ejecutar ambas opciones de manera periódica para mantener la BBDD actualizada.
