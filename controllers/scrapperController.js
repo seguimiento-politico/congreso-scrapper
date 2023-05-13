@@ -111,6 +111,36 @@ async function fetchComissions(filters = {}) {
   }
 }
 
+async function fetchBodyComposition(term = null, commissionCode = null) {
+  console.log(`Body composition [Fetching]`);
+
+  const comissions = await Comission.get(term, commissionCode);
+  console.log(comissions);
+  //loop every comission
+  for (const comission of comissions) {
+    // Fetch and save composition of the comission
+    const commissionData = await congressUtils.getBodyComposition(comission.term, comission.code);
+    await Comission.updateOne(
+      { term: comission.term, code: comission.code },
+      { $set: commissionData },
+      { upsert: true }
+    );
+    console.log(`Body composition -> term: ${comission.term} - comission: ${comission.code} [Done]`);
+
+    // Loop every subcomission within the current comission
+    for (const subcomission of comission.subcomissions) {
+      // Fetch and save composition of the subcomission
+      const subcommissionData = await congressUtils.getBodyComposition(comission.term, comission.code, subcomission.code);
+      await Comission.updateOne(
+        { term: comission.term, code: comission.code, "subcomissions.code": subcomission.code },
+        { $set: { "subcomissions.$": subcommissionData } },
+        { upsert: true }
+      );
+      console.log(`Body composition -> term: ${comission.term} - comission: ${comission.code} - subcomission: ${subcomission.code} [Done]`);
+    }
+  }
+}
+
 async function fetchSubcomissions(filters = {}) {
   console.log(`Subcomissions [Fetching]`);
 
@@ -230,5 +260,6 @@ module.exports = {
     fetchParliamentGroups,
     fetchInitiativesContent,
     fetchComissions,
-    fetchSubcomissions
+    fetchSubcomissions,
+    fetchBodyComposition
 };

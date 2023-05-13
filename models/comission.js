@@ -3,10 +3,17 @@ const mongoose = require('mongoose');
 const subcomissionSchema = new mongoose.Schema({
   name: String,
   code: String,
-  initiatives: {
-    creation_request: String,
-    creation: String
-  }
+  startDate: String,
+  endDate: String,
+  creation_request_initiative: String,
+  creation_initiative: String,
+  representatives: [{
+    id: String,
+    name: String,
+    position: String,
+    startDate: String,
+    endDate: String
+  }]
 });
 
 const comissionSchema = new mongoose.Schema({
@@ -14,11 +21,18 @@ const comissionSchema = new mongoose.Schema({
   name: String,
   code: String,
   type: String,
-  initiatives: {
-    creation_request: String,
-    creation: String
-  },
-  subcomissions: [subcomissionSchema]
+  startDate: String,
+  endDate: String,
+  creation_request_initiative: String,
+  creation_initiative: String,
+  subcomissions: [subcomissionSchema],
+  representatives: [{
+    id: String,
+    name: String,
+    position: String,
+    startDate: String,
+    endDate: String
+  }]
 });
 
 comissionSchema.methods.updateCommission = async function (term, commissionData) {
@@ -79,10 +93,19 @@ comissionSchema.methods.updateSubcommissionInitiatives = async function (term, c
   }
 };
 
-
-comissionSchema.statics.getAll = async function() {
-  return await this.find({}).exec();
+comissionSchema.statics.get = async function(term = null, commissionCode = null) {
+  if (term) {
+    if (commissionCode) {
+      return await this.findOne({ term: term, code: commissionCode }).exec();
+    } else {
+      return await this.find({ term: term }).exec();
+    }
+  } else {
+    return await this.find({}).exec();
+  }
 };
+
+
 
 let Commission;
 try {

@@ -31,7 +31,7 @@ Dada la ingente cantidad de información, hemos descartado la opción inicialmen
         - [x] grupos parlamentarios y partidos
         - [x] comisiones
         - [x] subcomisiones
-    - [ ] Composición de las comisiones
+    - [x] Composición de las comisiones y subcomisiones
     - [ ] Tipos de tramitación
     - [ ] Información relevante de cada iniciativa
         - [ ] Iniciativas relacionadas

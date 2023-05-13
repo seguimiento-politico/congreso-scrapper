@@ -1,26 +1,9 @@
 /* ---------- DEPENDENCIES ---------- */
 const readline = require('readline');
-const dbconfig = require('./config/database');
 
 const Term = require('./models/term'); // Import the Term model
 const scrapperController = require('./controllers/scrapperController');
-
-let database;
-
-switch (dbconfig.engine) {
-  case 'mongodb':
-    database = require('./services/mongoDB');
-    break;
-  case 'mysql':
-    database = require('./services/MySQL');
-    break;
-  case 'postgresql':
-    database = require('./services/postgresql');
-    break;
-  // Agrega más casos según los motores de bases de datos que desees utilizar
-  default:
-    throw new Error(`Unsupported database engine: ${dbconfig.engine}`);
-}
+const database = require('./controllers/databaseController');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -43,6 +26,7 @@ async function initialBasicScrapping() {
 
 async function initialDetailedScrapping() {
   await scrapperController.fetchInitiativesContent();
+  await scrapperController.fetchBodyComposition();
   process.exit(0); // Exit with a success code (0)
 }
 
@@ -60,6 +44,7 @@ async function OneTermBasicScrapping(term) {
 async function OneTermDetailedScrapping(term) {
   console.log('Detailed Scrapping for term:', term);
   await scrapperController.fetchInitiativesContent({ term: term });
+  await scrapperController.fetchBodyComposition(term);
   process.exit(0); // Exit with a success code (0)
 }
 

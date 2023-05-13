@@ -165,6 +165,42 @@ function transformPairlamentGroupData(data){
   return simplifiedData;
 }
 
+function transformBodyCompositionData(term, comissionCode, data, subcomissionCode = null){
+  let representatives = [];
+
+  for (const representativeData of data.data) {
+    const url = new URL(representativeData.urlFichaDiputado, 'https://example.com');
+    const params = new URLSearchParams(url.search);
+    const codParlamentario = params.get('codParlamentario');
+
+    const rep = {
+      id: codParlamentario,
+      name: representativeData.apellidosNombre,
+      position: representativeData.descCargo,
+      startDate: representativeData.fechaAltaFormat,
+      endDate: (representativeData.fechaBajaFormat)? representativeData.fechaBajaFormat : ''
+    };
+
+    representatives.push(rep);
+  }
+
+  const simplifiedData = {
+    code: subcomissionCode || comissionCode,
+    startDate: data.fechaConstitucion.fechaConstitucion,
+    endDate: (data.fechaDisolucion.fechaDisolucion)? data.fechaDisolucion.fechaDisolucion : '',
+    representatives: representatives
+  }
+
+  // Add the term only if we are dealing with a commission
+  if (!subcomissionCode) {
+    simplifiedData.term = term;
+  }
+
+  return simplifiedData;
+}
+
+
+
 // Función de comparación personalizada para ordenar por la clave 'iniciativaXXXX'
 function compareIniciativaKeys(a, b) {
   const keyA = parseInt(a.replace("iniciativa", ""));
@@ -413,6 +449,32 @@ async function scrapeComissions(filters = {}) {
   }
 
 }
+
+async function getBodyComposition(term, comissionCode, subcomissionCode = null){
+  // construct request
+  const request_url = `${urls.https}${endPoints.comission_composition.path}`;
+
+  let formParams = endPoints.comission_composition.params;
+  formParams['_organos_selectedLegislatura'] = convertionUtils.intToRoman(term);
+  formParams['_organos_compoHistorica'] = 'true';
+  formParams['_organos_selectedOrganoSup'] = subcomissionCode ? comissionCode : '1';
+  formParams['_organos_selectedSuborgano'] = subcomissionCode || comissionCode;
+
+  const config = await setRequest('POST', request_url, formParams);
+
+  try {
+    const response = await axios(config);
+    if (response.status === 200) {
+        let results = transformBodyCompositionData(term, comissionCode, response.data, subcomissionCode);
+        return results;
+    } else {
+        console.error('Representative [ERROR]', 'Error en la solicitud');
+    }
+  } catch (error) {
+      console.error('Representative [ERROR]', error);
+  }
+}
+
 
 // subcomisiones y ponencias
 async function scrapeSubcomissions(filters = {}) {
@@ -686,4 +748,5 @@ module.exports = {
     getParliamentGroups,
     generateInitiativesURLs,
     scrapeInitiative,
+    getBodyComposition,
 };

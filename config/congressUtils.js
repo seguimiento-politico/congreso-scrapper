@@ -1,4 +1,4 @@
-// URLs del Congreso de los diputados
+/* ------------ URLs del Congreso de los diputados ------------ */
 const baseUrl = "www.congreso.es";
 const urls = {
     base: baseUrl,
@@ -6,7 +6,7 @@ const urls = {
     http: "http://" + baseUrl,
 };
 
-// congreso.es API endPoints (JSON data)
+/* ------------- congreso.es API endPoints (JSON data) ------------ */
 const endPoints = {
     initiatives: {
         path: '/es/busqueda-de-iniciativas',
@@ -112,12 +112,17 @@ const endPoints = {
     },
     comission_composition: {
         path: '/es/organos/composicion-en-la-legislatura',
+        method: 'POST',
         params: {
             p_p_id: 'organos', 
-            p_p_lifecycle: '0', 
+            p_p_lifecycle: '2', 
             p_p_state: 'normal', 
             p_p_mode: 'view', 
-            _organos_selectedOrganoSup: '-20', // _organos_selectedLegislatura: "XIV", _organos_compoHistorica: "true" POST
+            p_p_resource_id: 'searchOrgano',
+            _organos_selectedOrganoSup: '1',
+            _organos_selectedLegislatura: '', // num romanos
+            _organos_compoHistorica: "true",
+            _organos_selectedSuborgano: '' 
         }
     },
     subcomissions: {
@@ -134,12 +139,15 @@ const endPoints = {
             p_p_state: 'normal', 
             p_p_mode: 'view', 
             p_p_resource_id: 'searchOrgano', 
-            p_p_cacheability: 'cacheLevelPage', // _organos_selectedLegislatura: 'XIV', _organos_selectedOrganoSup: '301', _organos_selectedSuborgano: '301201'
+            _organos_selectedLegislatura: '', // num romanos
+            _organos_selectedOrganoSup: '', 
+            _organos_compoHistorica: "true",
+            _organos_selectedSuborgano: ''
         }
     },            
 };       
 
-//congreso.es pages with relevant info not accesible by API (HTML data)
+/* ------------- congreso.es pages with relevant info not accesible by API (HTML data) ----------- */
 const pages = {
 
 };
