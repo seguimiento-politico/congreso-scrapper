@@ -17,6 +17,7 @@ async function BasicScrapping(term) {
   await scrapperController.fetchRepresentatives({ term: term });
   await scrapperController.fetchComissions({ term: term });
   await scrapperController.fetchSubcomissions({ term: term });
+  await scrapperController.fetchBodyComposition(term);
   await scrapperController.fetchInitiatives({ term: term }); //fetches initiatives and topology at the same time
   process.exit(0); // Exit with a success code (0)
 }
@@ -24,7 +25,6 @@ async function BasicScrapping(term) {
 async function DetailedScrapping(term) {
   console.log('Detailed Scrapping for term:', term);
   await scrapperController.fetchInitiativesContent({ term: term });
-  await scrapperController.fetchBodyComposition(term);
   process.exit(0); // Exit with a success code (0)
 }
 
